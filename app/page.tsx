@@ -191,7 +191,7 @@ export default function Home() {
           <a href="#vetting">Vetting</a>
           <a href="#membership">Membership</a>
         </nav>
-        <a className="header-action" href="#membership">
+        <a className="header-action" href="/portal">
           Open Portal
         </a>
         <MobileMenu />
@@ -422,30 +422,30 @@ export default function Home() {
           </p>
         </div>
         <div className="portal-grid">
-          <article>
+          <a href="/portal">
             <h3>Member Dashboard</h3>
             <p>
               Membership status, renewal due date, profile summary,
               announcements, documents, and password management.
             </p>
             <span>Member, pending member</span>
-          </article>
-          <article>
+          </a>
+          <a href="/portal">
             <h3>Admin Dashboard</h3>
             <p>
               Approvals, member search, document upload, renewal tracking,
               announcements, exports, and audit trail.
             </p>
             <span>Secretary, admin, super admin</span>
-          </article>
-          <article>
+          </a>
+          <a href="/portal">
             <h3>Supabase Tables</h3>
             <p>
               users, members, categories, announcements, documents, renewals,
               missing elder cases, caregiver references, and incident reviews.
             </p>
-            <span>Database layer next</span>
-          </article>
+            <span>Database layer connected</span>
+          </a>
         </div>
       </section>
 

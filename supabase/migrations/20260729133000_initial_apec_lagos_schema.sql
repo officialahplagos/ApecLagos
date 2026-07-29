@@ -453,6 +453,28 @@ create policy "Staff can manage missing elder private details"
   using (private.is_staff())
   with check (private.is_staff());
 
+create policy "Case submitters can add missing elder private details"
+  on public.missing_elder_private_details
+  for insert
+  to authenticated
+  with check (
+    exists (
+      select 1 from public.missing_elder_cases mec
+      where mec.id = case_id and mec.created_by = (select auth.uid())
+    )
+  );
+
+create policy "Case submitters can read their missing elder private details"
+  on public.missing_elder_private_details
+  for select
+  to authenticated
+  using (
+    exists (
+      select 1 from public.missing_elder_cases mec
+      where mec.id = case_id and mec.created_by = (select auth.uid())
+    )
+  );
+
 create policy "Users can read their own profile or staff can read all"
   on public.profiles
   for select

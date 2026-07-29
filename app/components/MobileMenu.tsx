@@ -7,6 +7,7 @@ const links = [
   { href: "#caregiver-register", label: "Caregiver Register" },
   { href: "#vetting", label: "Vetting" },
   { href: "#membership", label: "Membership" },
+  { href: "/portal", label: "Open Portal" },
 ];
 
 export function MobileMenu() {
@@ -65,7 +66,7 @@ export function MobileMenu() {
           ))}
         </nav>
 
-        <a className="drawer-action" href="#membership" onClick={close}>
+        <a className="drawer-action" href="/portal" onClick={close}>
           Open Portal
         </a>
       </aside>

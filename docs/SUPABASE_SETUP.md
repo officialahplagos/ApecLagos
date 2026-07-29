@@ -28,6 +28,8 @@ Create `.env.local` when the app is ready to connect:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-public-publishable-key
+# Legacy fallback if your dashboard still labels it as anon:
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-public-anon-key
 ```
 

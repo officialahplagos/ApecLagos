@@ -2,13 +2,13 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-async function render() {
+async function render(pathname = "/") {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
   const { default: worker } = await import(workerUrl.href);
 
   return worker.fetch(
-    new Request("http://localhost/", {
+    new Request(`http://localhost${pathname}`, {
       headers: { accept: "text/html" },
     }),
     {
@@ -40,16 +40,28 @@ test("server-renders the APEC Lagos platform shell", async () => {
   assert.match(html, /If found call/);
   assert.match(html, /Caregiver Reference and Safeguarding Register/);
   assert.match(html, /Caregiver Vetting Workflow/);
+  assert.match(html, /href="\/portal"/);
   assert.doesNotMatch(
     html,
     /codex-preview|react-loading-skeleton|Your site is taking shape/i,
   );
 });
 
+test("server-renders the Supabase-backed portal route", async () => {
+  const response = await render("/portal");
+  assert.equal(response.status, 200);
+
+  const html = await response.text();
+  assert.match(html, /Member access, applications, and safeguarding intake/);
+  assert.match(html, /Sign in to the portal|Supabase key needed/);
+  assert.match(html, /Missing Elder Alerts/);
+});
+
 test("keeps APEC branding and removes starter preview code", async () => {
-  const [css, page, layout, packageJson] = await Promise.all([
+  const [css, page, portal, layout, packageJson] = await Promise.all([
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/PortalApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../package.json", import.meta.url), "utf8"),
   ]);
@@ -59,9 +71,13 @@ test("keeps APEC branding and removes starter preview code", async () => {
   assert.match(css, /--gold:\s*#d9a441/);
   assert.match(css, /\.mobile-drawer/);
   assert.match(css, /\.footer-icon-strip/);
+  assert.match(css, /\.portal-shell/);
   assert.match(page, /missingElders/);
   assert.match(page, /vettingSteps/);
   assert.match(page, /referenceRows/);
+  assert.match(portal, /createBrowserSupabaseClient/);
+  assert.match(portal, /member_organizations/);
+  assert.match(portal, /missing_elder_cases/);
   assert.doesNotMatch(page + css, /footer-photo-strip|module-photo/);
   assert.match(layout, /APEC Lagos \| Elderly Care Provider Platform/);
   assert.doesNotMatch(
