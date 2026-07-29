@@ -81,6 +81,12 @@ const modules = [
   },
 ];
 
+const trustSignals = [
+  "Consent-led records",
+  "RLS-first database",
+  "Restricted incident access",
+];
+
 export default function Home() {
   return (
     <main>
@@ -98,33 +104,43 @@ export default function Home() {
           <a href="#vetting">Vetting</a>
           <a href="#membership">Membership</a>
         </nav>
-        <a className="header-action" href="#missing-elders">
-          Report Alert
+        <a className="header-action" href="#membership">
+          Open Portal
         </a>
       </header>
 
       <section className="hero" id="top">
         <div className="hero-content">
           <div className="eyebrow">Elderly care association platform</div>
-          <h1>APEC Lagos member and safeguarding system</h1>
+          <h1>Trusted infrastructure for elderly care providers.</h1>
           <p>
-            A professional web app for elderly care providers in Lagos State to
-            manage membership, share trusted notices, verify caregiver history,
-            and coordinate safeguarding action.
+            APEC Lagos brings membership operations, missing elder alerts,
+            caregiver references, and safeguarding reviews into one secure,
+            board-ready platform for Lagos State care providers.
           </p>
           <div className="hero-actions">
             <a className="primary-button" href="#membership">
-              View Member System
+              View Platform
             </a>
             <a className="secondary-button" href="#caregiver-register">
               Review Registers
             </a>
           </div>
+          <div className="trust-row" aria-label="Platform trust signals">
+            {trustSignals.map((item) => (
+              <span key={item}>{item}</span>
+            ))}
+          </div>
         </div>
         <div className="command-panel" aria-label="APEC platform overview">
           <div className="panel-header">
-            <span>Today&apos;s Safeguarding Desk</span>
-            <strong>Live shell</strong>
+            <span>Executive Safeguarding Console</span>
+            <strong>Prototype</strong>
+          </div>
+          <div className="case-spotlight">
+            <span>Priority watch</span>
+            <b>2 high-risk elder alerts need officer review</b>
+            <small>Last updated from the secure operations queue</small>
           </div>
           <div className="status-grid">
             <div>
