@@ -53,6 +53,30 @@ export type MissingElderCase = {
   published_at: string | null;
 };
 
+export type CaregiverProfile = {
+  id: string;
+  legal_name: string;
+  phone: string | null;
+  email: string | null;
+  nin_last4: string | null;
+  bvn_last4: string | null;
+  consent_obtained: boolean;
+  status: "active" | "inactive" | "under_review" | "restricted";
+  created_at: string;
+};
+
+export type CaregiverEmploymentReference = {
+  id: string;
+  caregiver_id: string;
+  role_title: string;
+  supervisor_name: string | null;
+  supervisor_contact: string | null;
+  conduct_summary: string | null;
+  rehire_eligible: boolean | null;
+  consent_verified: boolean;
+  verification_status: "pending" | "verified" | "disputed" | "rejected";
+};
+
 export const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://twjpsdtovbfetzbbmlaz.supabase.co";
 
