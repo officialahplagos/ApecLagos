@@ -135,7 +135,7 @@ export default function Home() {
         <div className="command-panel" aria-label="APEC platform overview">
           <div className="panel-header">
             <span>Executive Safeguarding Console</span>
-            <strong>Prototype</strong>
+            <strong>Live</strong>
           </div>
           <div className="case-spotlight">
             <span>Priority watch</span>
