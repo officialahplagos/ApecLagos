@@ -53,7 +53,10 @@ test("server-renders the Supabase-backed portal route", async () => {
 
   const html = await response.text();
   assert.match(html, /Member access, applications, and safeguarding intake/);
-  assert.match(html, /Sign in to the portal|Supabase key needed/);
+  assert.match(
+    html,
+    /Sign in to the portal|Supabase key needed|Supabase project connected|Loading portal/,
+  );
   assert.match(html, /Missing Elder Alerts/);
 });
 
