@@ -1,3 +1,4 @@
+import { MobileMenu } from "./components/MobileMenu";
 import { StatGrid } from "./components/StatGrid";
 
 const missingElders = [
@@ -7,6 +8,7 @@ const missingElders = [
     lastSeen: "Ikeja GRA",
     date: "Today, 7:30 AM",
     risk: "Memory loss",
+    contact: "0800 000 1122",
     status: "Active alert",
   },
   {
@@ -15,6 +17,7 @@ const missingElders = [
     lastSeen: "Surulere",
     date: "Yesterday, 5:45 PM",
     risk: "Diabetes medication due",
+    contact: "0800 000 1144",
     status: "Police notified",
   },
   {
@@ -23,6 +26,7 @@ const missingElders = [
     lastSeen: "Lekki Phase 1",
     date: "Closed 2 days ago",
     risk: "Found safe",
+    contact: "Case closed",
     status: "Closed",
   },
 ];
@@ -68,61 +72,22 @@ const modules = [
   {
     title: "Member Portal",
     text: "Profiles, renewals, announcements, downloadable documents, and member status.",
-    photo: "/apec-hero-care.webp",
-    photoPosition: "65% 45%",
-    icon: null,
+    icon: "members",
   },
   {
     title: "Admin Desk",
     text: "Approvals, member records, document uploads, renewal tracking, and audit logs.",
-    photo: null,
-    photoPosition: null,
-    icon: (
-      <svg
-        width="22"
-        height="22"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <rect x="3" y="4" width="18" height="16" rx="2" />
-        <path d="M3 9h18M8 4v5" />
-        <path d="m8.5 14 2 2 4-4" />
-      </svg>
-    ),
+    icon: "admin",
   },
   {
     title: "Missing Elders",
     text: "Moderated alerts for missing elderly persons with found and closed case tracking.",
-    photo: "/apec-hero-care.webp",
-    photoPosition: "78% 35%",
-    icon: null,
+    icon: "missing",
   },
   {
     title: "Caregiver Registers",
     text: "Reference checks, consent records, vetting progress, and restricted safeguarding incidents.",
-    photo: null,
-    photoPosition: null,
-    icon: (
-      <svg
-        width="22"
-        height="22"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <path d="M12 3 4.5 6v6c0 4.5 3.2 7.4 7.5 9 4.3-1.6 7.5-4.5 7.5-9V6L12 3Z" />
-        <path d="m9 12 2 2 4-4" />
-      </svg>
-    ),
+    icon: "shield",
   },
 ];
 
@@ -138,6 +103,76 @@ const statusStats = [
   { value: 412, label: "reference checks" },
   { value: 24, label: "pending reviews" },
 ];
+
+function AppIcon({ name }: { name: string }) {
+  const common = {
+    width: 24,
+    height: 24,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 2,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true,
+  };
+
+  if (name === "members") {
+    return (
+      <svg {...common}>
+        <circle cx="9" cy="8" r="3.5" />
+        <path d="M3.5 20c.8-3.5 3-5.3 5.5-5.3s4.7 1.8 5.5 5.3" />
+        <path d="M15.5 10.5a3 3 0 1 0 0-5.9" />
+        <path d="M16 15c2.2.6 3.7 2.2 4.5 5" />
+      </svg>
+    );
+  }
+
+  if (name === "admin") {
+    return (
+      <svg {...common}>
+        <rect x="3" y="4" width="18" height="16" rx="2" />
+        <path d="M3 9h18M8 4v5" />
+        <path d="m8.5 14 2 2 4-4" />
+      </svg>
+    );
+  }
+
+  if (name === "missing") {
+    return (
+      <svg {...common}>
+        <path d="M12 21s-7-4.8-7-11a7 7 0 0 1 14 0c0 6.2-7 11-7 11Z" />
+        <circle cx="12" cy="10" r="2.4" />
+        <path d="M9 3.8 7.5 2.3M15 3.8l1.5-1.5" />
+      </svg>
+    );
+  }
+
+  if (name === "phone") {
+    return (
+      <svg {...common}>
+        <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.4 19.4 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.7.6 2.5a2 2 0 0 1-.5 2.1L8 9.5a16 16 0 0 0 6.5 6.5l1.2-1.2a2 2 0 0 1 2.1-.5c.8.3 1.6.5 2.5.6A2 2 0 0 1 22 16.9Z" />
+      </svg>
+    );
+  }
+
+  if (name === "photo") {
+    return (
+      <svg {...common}>
+        <rect x="3" y="5" width="18" height="14" rx="2" />
+        <circle cx="9" cy="10" r="2" />
+        <path d="m21 15-4-4-5 5-2-2-4 4" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...common}>
+      <path d="M12 3 4.5 6v6c0 4.5 3.2 7.4 7.5 9 4.3-1.6 7.5-4.5 7.5-9V6L12 3Z" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
+  );
+}
 
 export default function Home() {
   return (
@@ -159,6 +194,7 @@ export default function Home() {
         <a className="header-action" href="#membership">
           Open Portal
         </a>
+        <MobileMenu />
       </header>
 
       <section className="hero" id="top">
@@ -215,16 +251,9 @@ export default function Home() {
       <section className="module-strip" aria-label="Main app modules">
         {modules.map((module) => (
           <article key={module.title}>
-            {module.photo ? (
-              <img
-                src={module.photo}
-                alt=""
-                className="module-photo"
-                style={{ objectPosition: module.photoPosition ?? "center" }}
-              />
-            ) : (
-              <div className="module-icon">{module.icon}</div>
-            )}
+            <div className="module-icon">
+              <AppIcon name={module.icon} />
+            </div>
             <h2>{module.title}</h2>
             <p>{module.text}</p>
           </article>
@@ -244,7 +273,10 @@ export default function Home() {
           <div className="elder-board">
             {missingElders.map((elder) => (
               <article className="elder-card" key={elder.name}>
-                <div className="avatar">{elder.name.slice(0, 1)}</div>
+                <div className="missing-photo">
+                  <AppIcon name="photo" />
+                  <span>Last photo</span>
+                </div>
                 <div>
                   <div className="card-topline">
                     <h3>{elder.name}</h3>
@@ -267,6 +299,10 @@ export default function Home() {
                       <dt>Risk note</dt>
                       <dd>{elder.risk}</dd>
                     </div>
+                    <div>
+                      <dt>If found call</dt>
+                      <dd>{elder.contact}</dd>
+                    </div>
                   </dl>
                 </div>
               </article>
@@ -279,8 +315,16 @@ export default function Home() {
               <input placeholder="Name to be reviewed" />
             </label>
             <label>
+              Last known photo
+              <input type="file" accept="image/png,image/jpeg,image/webp" />
+            </label>
+            <label>
               Last seen location
               <input placeholder="Street, LGA, landmark" />
+            </label>
+            <label>
+              Contact number if found
+              <input placeholder="Family or reporting officer number" />
             </label>
             <label>
               Safeguarding notes
@@ -406,10 +450,10 @@ export default function Home() {
       </section>
 
       <footer>
-        <div className="footer-photo-strip" aria-hidden="true">
-          <img src="/apec-hero-care.webp" alt="" />
-          <img src="/apec-hero-care.webp" alt="" />
-          <img src="/apec-hero-care.webp" alt="" />
+        <div className="footer-icon-strip" aria-hidden="true">
+          <span><AppIcon name="members" /></span>
+          <span><AppIcon name="missing" /></span>
+          <span><AppIcon name="phone" /></span>
         </div>
         <img src="/logo.svg" alt="" />
         <span>

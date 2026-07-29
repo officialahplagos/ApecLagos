@@ -35,6 +35,9 @@ test("server-renders the APEC Lagos platform shell", async () => {
   );
   assert.match(html, /Trusted infrastructure for elderly care providers/);
   assert.match(html, /Missing Elders Registry/);
+  assert.match(html, /Last known photo/);
+  assert.match(html, /Contact number if found/);
+  assert.match(html, /If found call/);
   assert.match(html, /Caregiver Reference and Safeguarding Register/);
   assert.match(html, /Caregiver Vetting Workflow/);
   assert.doesNotMatch(
@@ -54,9 +57,12 @@ test("keeps APEC branding and removes starter preview code", async () => {
   assert.match(css, /--teal:\s*#0f766e/);
   assert.match(css, /--navy:\s*#162b45/);
   assert.match(css, /--gold:\s*#d9a441/);
+  assert.match(css, /\.mobile-drawer/);
+  assert.match(css, /\.footer-icon-strip/);
   assert.match(page, /missingElders/);
   assert.match(page, /vettingSteps/);
   assert.match(page, /referenceRows/);
+  assert.doesNotMatch(page + css, /footer-photo-strip|module-photo/);
   assert.match(layout, /APEC Lagos \| Elderly Care Provider Platform/);
   assert.doesNotMatch(
     page + layout + packageJson,
