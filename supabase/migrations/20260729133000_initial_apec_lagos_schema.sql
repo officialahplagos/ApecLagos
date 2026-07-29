@@ -246,6 +246,7 @@ create table if not exists public.audit_logs (
 create or replace function private.set_updated_at()
 returns trigger
 language plpgsql
+set search_path = public
 as $$
 begin
   new.updated_at = now();
@@ -345,15 +346,40 @@ create trigger set_caregiver_safeguarding_incidents_updated_at before update on 
 create index if not exists profiles_role_idx on public.profiles(role);
 create index if not exists member_organizations_status_idx on public.member_organizations(status);
 create index if not exists member_organizations_category_idx on public.member_organizations(category_id);
+create index if not exists member_organizations_created_by_idx on public.member_organizations(created_by);
 create index if not exists organization_members_user_idx on public.organization_members(user_id);
 create index if not exists announcements_publish_idx on public.announcements(target_audience, publish_at desc);
+create index if not exists announcements_created_by_idx on public.announcements(created_by);
 create index if not exists missing_elder_cases_status_idx on public.missing_elder_cases(status, published_at desc);
+create index if not exists missing_elder_cases_created_by_idx on public.missing_elder_cases(created_by);
+create index if not exists missing_elder_cases_reviewed_by_idx on public.missing_elder_cases(reviewed_by);
 create index if not exists caregiver_references_caregiver_idx on public.caregiver_employment_references(caregiver_id);
+create index if not exists caregiver_references_organization_idx on public.caregiver_employment_references(organization_id);
+create index if not exists caregiver_references_verified_by_idx on public.caregiver_employment_references(verified_by);
 create index if not exists caregiver_vetting_caregiver_idx on public.caregiver_vetting_checks(caregiver_id, check_type);
+create index if not exists caregiver_vetting_completed_by_idx on public.caregiver_vetting_checks(completed_by);
 create index if not exists caregiver_incidents_caregiver_idx on public.caregiver_safeguarding_incidents(caregiver_id);
+create index if not exists caregiver_incidents_created_by_idx on public.caregiver_safeguarding_incidents(created_by);
+create index if not exists caregiver_incidents_reporting_org_idx on public.caregiver_safeguarding_incidents(reporting_organization_id);
+create index if not exists caregiver_incidents_reviewed_by_idx on public.caregiver_safeguarding_incidents(reviewed_by);
+create index if not exists caregiver_profiles_created_by_org_idx on public.caregiver_profiles(created_by_organization_id);
+create index if not exists caregiver_incident_responses_incident_idx on public.caregiver_incident_responses(incident_id);
+create index if not exists caregiver_incident_responses_submitted_by_idx on public.caregiver_incident_responses(submitted_by);
 create index if not exists documents_org_idx on public.documents(organization_id);
+create index if not exists documents_caregiver_idx on public.documents(caregiver_id);
+create index if not exists documents_missing_elder_case_idx on public.documents(missing_elder_case_id);
+create index if not exists documents_uploaded_by_idx on public.documents(uploaded_by);
 create index if not exists renewals_org_period_idx on public.renewals(organization_id, period_end desc);
+create index if not exists renewals_recorded_by_idx on public.renewals(recorded_by);
 create index if not exists audit_logs_actor_created_idx on public.audit_logs(actor_id, created_at desc);
+
+do $$
+begin
+  if to_regprocedure('public.rls_auto_enable()') is not null then
+    revoke execute on function public.rls_auto_enable() from public, anon, authenticated;
+  end if;
+end;
+$$;
 
 insert into public.membership_categories (name, description, annual_dues)
 values
