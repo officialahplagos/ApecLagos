@@ -36,6 +36,47 @@ body {
   margin: 0;
 }
 
+.demo-banner {
+  align-items: center;
+  background: linear-gradient(90deg, #fef3c7 0%, #dbeafe 100%);
+  border-bottom: 1px solid rgba(217, 164, 65, 0.55);
+  color: #17324c;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding: 10px clamp(14px, 4vw, 40px);
+}
+
+.demo-banner-icon {
+  align-items: center;
+  background: #d9a441;
+  border-radius: 999px;
+  color: #081c1b;
+  display: inline-flex;
+  font-size: 0.82rem;
+  font-weight: 900;
+  height: 24px;
+  justify-content: center;
+  width: 24px;
+}
+
+.demo-banner p {
+  font-size: 0.92rem;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.demo-banner button {
+  background: rgba(8, 28, 27, 0.92);
+  border: 0;
+  border-radius: 7px;
+  color: var(--white);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 8px 11px;
+}
+
 :focus-visible {
   outline: 2px solid var(--teal);
   outline-offset: 3px;
@@ -954,6 +995,42 @@ td small {
   margin-top: 12px;
 }
 
+.sample-incident-card {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(217, 164, 65, 0.46);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+  padding: 16px;
+}
+
+.sample-incident-card span {
+  background: rgba(217, 164, 65, 0.18);
+  border: 1px solid rgba(217, 164, 65, 0.45);
+  border-radius: 999px;
+  color: #f8df9c;
+  font-size: 0.72rem;
+  font-weight: 900;
+  justify-self: start;
+  padding: 5px 8px;
+}
+
+.sample-incident-card h4 {
+  color: var(--white);
+  font-family: var(--font-display), var(--font-geist-sans), serif;
+  font-size: 1.2rem;
+  margin: 0;
+}
+
+.sample-incident-card p {
+  margin: 0;
+}
+
+.sample-incident-card small {
+  color: rgba(255, 255, 255, 0.7);
+}
+
 .incident-panel ul {
   display: grid;
   gap: 10px;
@@ -1501,6 +1578,16 @@ footer img {
 }
 
 @media (max-width: 680px) {
+  .demo-banner {
+    align-items: start;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .demo-banner button {
+    grid-column: 2;
+    justify-self: start;
+  }
+
   .site-header {
     grid-template-columns: 1fr auto;
     margin-inline: 10px;

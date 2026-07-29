@@ -38,6 +38,56 @@ const roleOptions: Profile["role"][] = [
   "super_admin",
 ];
 
+const sampleAnnouncements: Announcement[] = [
+  {
+    id: "sample-announcement-001",
+    title: "SAMPLE: Member briefing draft",
+    body: "Fictional sample announcement showing how approved member notices will appear in the portal.",
+    target_audience: "members",
+    is_pinned: true,
+    is_urgent: false,
+    publish_at: "2026-07-29T00:00:00.000Z",
+  },
+  {
+    id: "sample-announcement-002",
+    title: "SAMPLE: Renewal reminder",
+    body: "Fictional reminder for demonstrating renewal and document workflows before launch.",
+    target_audience: "members",
+    is_pinned: false,
+    is_urgent: false,
+    publish_at: "2026-07-29T00:00:00.000Z",
+  },
+];
+
+const sampleMissingCases: MissingElderCase[] = [
+  {
+    id: "sample-missing-001",
+    public_reference: "SAMPLE-ME-001",
+    elder_name: "Case Sample 001",
+    approximate_age: 78,
+    photo_path: null,
+    last_seen_location: "Sample Lagos location A",
+    last_seen_at: "2026-07-29T07:30:00.000Z",
+    public_notes: "SAMPLE: fictional public alert preview. If found call +234 000 000 0000.",
+    police_reference: "SAMPLE-REF",
+    status: "active",
+    published_at: "2026-07-29T08:00:00.000Z",
+  },
+  {
+    id: "sample-missing-002",
+    public_reference: "SAMPLE-ME-002",
+    elder_name: "Case Sample 002",
+    approximate_age: 82,
+    photo_path: null,
+    last_seen_location: "Sample Lagos location B",
+    last_seen_at: "2026-07-28T17:45:00.000Z",
+    public_notes: "SAMPLE: fictional police-notified alert for demo review.",
+    police_reference: "SAMPLE-REF",
+    status: "active",
+    published_at: "2026-07-29T08:05:00.000Z",
+  },
+];
+
 function getErrorMessage(error: unknown) {
   if ((error as AuthError | null)?.message) {
     return (error as AuthError).message;
@@ -98,6 +148,10 @@ export function PortalApp() {
     profile?.role === "committee_member";
 
   const isAdmin = profile?.role === "super_admin" || profile?.role === "secretary_admin";
+  const visibleAnnouncements = announcements.length ? announcements : sampleAnnouncements;
+  const visibleMissingCases = missingCases.length ? missingCases : sampleMissingCases;
+  const usingSampleAnnouncements = announcements.length === 0;
+  const usingSampleMissingCases = missingCases.length === 0;
 
   const refreshPublicData = useCallback(async () => {
     if (!supabase) return;
@@ -657,7 +711,7 @@ export function PortalApp() {
 
       <section className="portal-hero">
         <div>
-          <span className="eyebrow">Phase 2 app layer</span>
+          <span className="eyebrow">Board-ready demo portal</span>
           <h1>Member access, applications, and safeguarding intake.</h1>
           <p>
             This portal connects the APEC Lagos platform to Supabase Auth,
@@ -689,7 +743,10 @@ export function PortalApp() {
       ) : booting ? (
         <section className="portal-card">
           <h2>Loading portal</h2>
-          <p>Checking the current Supabase session.</p>
+          <p>
+            Checking the current Supabase session. Log in as a demo member to
+            view sample records.
+          </p>
         </section>
       ) : user ? (
         <>
@@ -1130,18 +1187,18 @@ export function PortalApp() {
         <article className="portal-card">
           <div className="portal-section-head">
             <h2>Announcements</h2>
-            <span>{announcements.length}</span>
+            <span>{usingSampleAnnouncements ? "Sample" : visibleAnnouncements.length}</span>
           </div>
           <div className="portal-list">
-            {announcements.length ? (
-              announcements.map((announcement) => (
+            {visibleAnnouncements.length ? (
+              visibleAnnouncements.map((announcement) => (
                 <div key={announcement.id}>
                   <b>{announcement.title}</b>
                   <span>{announcement.body}</span>
                 </div>
               ))
             ) : (
-              <p>No announcements are visible yet.</p>
+              <p>Sample announcements will appear here when the demo data loads.</p>
             )}
           </div>
         </article>
@@ -1149,11 +1206,11 @@ export function PortalApp() {
         <article className="portal-card">
           <div className="portal-section-head">
             <h2>Missing Elder Alerts</h2>
-            <span>{missingCases.length}</span>
+            <span>{usingSampleMissingCases ? "Sample" : visibleMissingCases.length}</span>
           </div>
           <div className="portal-list">
-            {missingCases.length ? (
-              missingCases.map((caseItem) => {
+            {visibleMissingCases.length ? (
+              visibleMissingCases.map((caseItem) => {
                 const photoUrl = getPhotoUrl(caseItem.photo_path);
                 return (
                   <div className="portal-row-card with-photo" key={caseItem.id}>
@@ -1177,7 +1234,7 @@ export function PortalApp() {
                 );
               })
             ) : (
-              <p>No public alerts are active yet.</p>
+              <p>Sample public alerts will appear here when the demo data loads.</p>
             )}
           </div>
         </article>

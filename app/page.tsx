@@ -3,29 +3,29 @@ import { StatGrid } from "./components/StatGrid";
 
 const missingElders = [
   {
-    name: "Mrs. Abimbola A.",
+    name: "Case Sample 001",
     age: "78",
-    lastSeen: "Ikeja GRA",
-    date: "Today, 7:30 AM",
-    risk: "Memory loss",
-    contact: "0800 000 1122",
+    lastSeen: "Sample Lagos location A",
+    date: "Sample time 07:30",
+    risk: "Sample risk note",
+    contact: "+234 000 000 0000",
     status: "Active alert",
   },
   {
-    name: "Mr. Joseph O.",
+    name: "Case Sample 002",
     age: "82",
-    lastSeen: "Surulere",
-    date: "Yesterday, 5:45 PM",
-    risk: "Diabetes medication due",
-    contact: "0800 000 1144",
+    lastSeen: "Sample Lagos location B",
+    date: "Sample time 17:45",
+    risk: "Sample risk note",
+    contact: "+234 000 000 0000",
     status: "Police notified",
   },
   {
-    name: "Mrs. Grace E.",
+    name: "Case Sample 003",
     age: "74",
-    lastSeen: "Lekki Phase 1",
-    date: "Closed 2 days ago",
-    risk: "Found safe",
+    lastSeen: "Sample Lagos location C",
+    date: "Sample closed case",
+    risk: "Sample resolved note",
     contact: "Case closed",
     status: "Closed",
   },
@@ -46,21 +46,21 @@ const vettingSteps = [
 
 const referenceRows = [
   {
-    caregiver: "T. Adewale",
+    caregiver: "Sample Caregiver 001",
     role: "Live-in caregiver",
     employer: "Verified member home",
     period: "2023 - 2026",
     rating: "Reference confirmed",
   },
   {
-    caregiver: "M. Okorie",
+    caregiver: "Sample Caregiver 002",
     role: "Healthcare assistant",
     employer: "Day-care provider",
     period: "2022 - 2025",
     rating: "Good conduct record",
   },
   {
-    caregiver: "S. Balogun",
+    caregiver: "Sample Caregiver 003",
     role: "Nurse aide",
     employer: "Residential care facility",
     period: "2021 - 2024",
@@ -98,10 +98,10 @@ const trustSignals = [
 ];
 
 const statusStats = [
-  { value: 3, label: "elder alerts" },
-  { value: 128, label: "member records" },
-  { value: 412, label: "reference checks" },
-  { value: 24, label: "pending reviews" },
+  { value: 14, label: "elder alerts" },
+  { value: 86, label: "member records" },
+  { value: 23, label: "reference checks" },
+  { value: 4, label: "pending reviews" },
 ];
 
 function AppIcon({ name }: { name: string }) {
@@ -204,7 +204,8 @@ export default function Home() {
           <p>
             APEC Lagos brings membership operations, missing elder alerts,
             caregiver references, and safeguarding reviews into one secure,
-            board-ready platform for Lagos State care providers.
+            platform designed for board-level reporting across Lagos State care
+            providers.
           </p>
           <div className="hero-actions">
             <a className="primary-button" href="#membership">
@@ -226,7 +227,7 @@ export default function Home() {
             <strong>Live</strong>
           </div>
           <div className="case-spotlight">
-            <span>Priority watch</span>
+            <span>Priority watch (sample data)</span>
             <b>2 high-risk elder alerts need officer review</b>
             <small>Last updated from the secure operations queue</small>
           </div>
@@ -381,6 +382,15 @@ export default function Home() {
               This replaces a casual blacklist with a controlled Do Not Rehire
               and incident review workflow.
             </p>
+            <article className="sample-incident-card">
+              <span>SAMPLE</span>
+              <h4>Sample incident review 001</h4>
+              <p>
+                Fictional case showing evidence upload, reviewer assignment,
+                caregiver response, and final safeguarding outcome.
+              </p>
+              <small>Status: Under review - severity: medium</small>
+            </article>
             <ul>
               <li>Evidence upload required before review</li>
               <li>Reporting organisation and reviewer recorded</li>
@@ -416,9 +426,8 @@ export default function Home() {
           <span>Association operations</span>
           <h2>Membership and Admin Portal</h2>
           <p>
-            The first build keeps the association usable immediately, then
-            connects Supabase authentication, storage, and database policies in
-            the next layer.
+            Built on a secure Supabase backend with role-based access for
+            members, secretaries, committee users, and admins.
           </p>
         </div>
         <div className="portal-grid">
@@ -441,10 +450,10 @@ export default function Home() {
           <a href="/portal">
             <h3>Supabase Tables</h3>
             <p>
-              users, members, categories, announcements, documents, renewals,
+              Structured data model covering members, renewals, documents,
               missing elder cases, caregiver references, and incident reviews.
             </p>
-            <span>Database layer connected</span>
+            <span>Structured safeguarding data model</span>
           </a>
         </div>
       </section>
