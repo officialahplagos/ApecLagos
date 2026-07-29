@@ -625,6 +625,10 @@ h1 {
   display: block;
 }
 
+.priority-list b {
+  color: var(--navy);
+}
+
 .module-strip {
   display: grid;
   gap: 1px;
