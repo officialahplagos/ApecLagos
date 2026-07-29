@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-labelledby="title desc">
+  <title id="title">APEC Lagos logo</title>
+  <desc id="desc">Shield mark with care cross, elder support arc, and APEC initials.</desc>
+  <rect width="160" height="160" rx="32" fill="#f7faf8"/>
+  <path d="M80 17 124 34v39c0 31-17 55-44 70-27-15-44-39-44-70V34l44-17Z" fill="#0f766e"/>
+  <path d="M80 29 113 42v31c0 24-12 42-33 55-21-13-33-31-33-55V42l33-13Z" fill="#ffffff"/>
+  <path d="M73 48h14v22h22v14H87v22H73V84H51V70h22V48Z" fill="#0f766e"/>
+  <path d="M45 105c12-14 23-19 35-19s23 5 35 19" fill="none" stroke="#d9a441" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="80" cy="70" r="9" fill="#1e3a5f"/>
+  <text x="80" y="139" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="800" fill="#1e3a5f">APEC</text>
+</svg>
