@@ -1,3 +1,5 @@
+import { StatGrid } from "./components/StatGrid";
+
 const missingElders = [
   {
     name: "Mrs. Abimbola A.",
@@ -66,18 +68,61 @@ const modules = [
   {
     title: "Member Portal",
     text: "Profiles, renewals, announcements, downloadable documents, and member status.",
+    photo: "/apec-hero-care.webp",
+    photoPosition: "65% 45%",
+    icon: null,
   },
   {
     title: "Admin Desk",
     text: "Approvals, member records, document uploads, renewal tracking, and audit logs.",
+    photo: null,
+    photoPosition: null,
+    icon: (
+      <svg
+        width="22"
+        height="22"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <rect x="3" y="4" width="18" height="16" rx="2" />
+        <path d="M3 9h18M8 4v5" />
+        <path d="m8.5 14 2 2 4-4" />
+      </svg>
+    ),
   },
   {
     title: "Missing Elders",
     text: "Moderated alerts for missing elderly persons with found and closed case tracking.",
+    photo: "/apec-hero-care.webp",
+    photoPosition: "78% 35%",
+    icon: null,
   },
   {
     title: "Caregiver Registers",
     text: "Reference checks, consent records, vetting progress, and restricted safeguarding incidents.",
+    photo: null,
+    photoPosition: null,
+    icon: (
+      <svg
+        width="22"
+        height="22"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M12 3 4.5 6v6c0 4.5 3.2 7.4 7.5 9 4.3-1.6 7.5-4.5 7.5-9V6L12 3Z" />
+        <path d="m9 12 2 2 4-4" />
+      </svg>
+    ),
   },
 ];
 
@@ -85,6 +130,13 @@ const trustSignals = [
   "Consent-led records",
   "RLS-first database",
   "Restricted incident access",
+];
+
+const statusStats = [
+  { value: 3, label: "elder alerts" },
+  { value: 128, label: "member records" },
+  { value: 412, label: "reference checks" },
+  { value: 24, label: "pending reviews" },
 ];
 
 export default function Home() {
@@ -142,24 +194,7 @@ export default function Home() {
             <b>2 high-risk elder alerts need officer review</b>
             <small>Last updated from the secure operations queue</small>
           </div>
-          <div className="status-grid">
-            <div>
-              <strong>3</strong>
-              <span>elder alerts</span>
-            </div>
-            <div>
-              <strong>128</strong>
-              <span>member records</span>
-            </div>
-            <div>
-              <strong>412</strong>
-              <span>reference checks</span>
-            </div>
-            <div>
-              <strong>24</strong>
-              <span>pending reviews</span>
-            </div>
-          </div>
+          <StatGrid stats={statusStats} />
           <div className="priority-list">
             <div>
               <b>Consent queue</b>
@@ -180,6 +215,16 @@ export default function Home() {
       <section className="module-strip" aria-label="Main app modules">
         {modules.map((module) => (
           <article key={module.title}>
+            {module.photo ? (
+              <img
+                src={module.photo}
+                alt=""
+                className="module-photo"
+                style={{ objectPosition: module.photoPosition ?? "center" }}
+              />
+            ) : (
+              <div className="module-icon">{module.icon}</div>
+            )}
             <h2>{module.title}</h2>
             <p>{module.text}</p>
           </article>
@@ -302,7 +347,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="workspace-band" id="vetting">
+      <section className="workspace-band warm" id="vetting">
         <div className="section-heading">
           <span>Recruitment controls</span>
           <h2>Caregiver Vetting Workflow</h2>
@@ -361,6 +406,11 @@ export default function Home() {
       </section>
 
       <footer>
+        <div className="footer-photo-strip" aria-hidden="true">
+          <img src="/apec-hero-care.webp" alt="" />
+          <img src="/apec-hero-care.webp" alt="" />
+          <img src="/apec-hero-care.webp" alt="" />
+        </div>
         <img src="/logo.svg" alt="" />
         <span>
           APEC Lagos. Built for elderly care membership, coordination, and
