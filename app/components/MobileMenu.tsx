@@ -7,7 +7,6 @@ const links = [
   { href: "#caregiver-register", label: "Caregiver Register" },
   { href: "#vetting", label: "Vetting" },
   { href: "#membership", label: "Membership" },
-  { href: "/portal", label: "Open Portal" },
 ];
 
 export function MobileMenu() {
@@ -53,8 +52,14 @@ export function MobileMenu() {
             <strong>APEC Lagos</strong>
             <small>Provider platform</small>
           </div>
-          <button type="button" aria-label="Close navigation menu" onClick={close}>
-            x
+          <button
+            className="menu-close-button"
+            type="button"
+            aria-label="Close navigation menu"
+            onClick={close}
+          >
+            <span />
+            <span />
           </button>
         </div>
 
