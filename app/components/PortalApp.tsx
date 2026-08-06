@@ -10,12 +10,10 @@ import {
   type CaregiverEmploymentReference,
   type CaregiverProfile,
   type MemberOrganization,
-  type MembershipCategory,
+  type MembershipApplication,
   type MissingElderCase,
   type Profile,
 } from "../../lib/supabase/client";
-
-type Mode = "sign-in" | "register";
 
 type Notice = {
   tone: "info" | "success" | "error";
@@ -25,6 +23,7 @@ type Notice = {
 const roleLabels: Record<Profile["role"], string> = {
   super_admin: "Super Admin",
   secretary_admin: "Secretary/Admin",
+  compliance_officer: "Compliance Officer",
   committee_member: "Committee Member",
   member: "Member",
   pending_member: "Pending Member",
@@ -33,6 +32,7 @@ const roleLabels: Record<Profile["role"], string> = {
 const roleOptions: Profile["role"][] = [
   "pending_member",
   "member",
+  "compliance_officer",
   "committee_member",
   "secretary_admin",
   "super_admin",
@@ -124,16 +124,16 @@ export function PortalApp() {
     [configured],
   );
 
-  const [mode, setMode] = useState<Mode>("sign-in");
   const [loading, setLoading] = useState(false);
   const [booting, setBooting] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [categories, setCategories] = useState<MembershipCategory[]>([]);
   const [organizations, setOrganizations] = useState<MemberOrganization[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [missingCases, setMissingCases] = useState<MissingElderCase[]>([]);
-  const [pendingOrganizations, setPendingOrganizations] = useState<MemberOrganization[]>([]);
+  const [membershipApplications, setMembershipApplications] = useState<
+    MembershipApplication[]
+  >([]);
   const [reviewCases, setReviewCases] = useState<MissingElderCase[]>([]);
   const [caregivers, setCaregivers] = useState<CaregiverProfile[]>([]);
   const [caregiverReferences, setCaregiverReferences] = useState<
@@ -141,13 +141,19 @@ export function PortalApp() {
   >([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [notice, setNotice] = useState<Notice | null>(null);
+  const [passwordSetup, setPasswordSetup] = useState(false);
 
   const isStaff =
     profile?.role === "super_admin" ||
     profile?.role === "secretary_admin" ||
+    profile?.role === "compliance_officer" ||
     profile?.role === "committee_member";
 
   const isAdmin = profile?.role === "super_admin" || profile?.role === "secretary_admin";
+  const canReviewMembership =
+    profile?.role === "super_admin" ||
+    profile?.role === "secretary_admin" ||
+    profile?.role === "compliance_officer";
   const visibleAnnouncements = announcements.length ? announcements : sampleAnnouncements;
   const visibleMissingCases = missingCases.length ? missingCases : sampleMissingCases;
   const usingSampleAnnouncements = announcements.length === 0;
@@ -156,12 +162,7 @@ export function PortalApp() {
   const refreshPublicData = useCallback(async () => {
     if (!supabase) return;
 
-    const [categoriesResult, announcementsResult, missingResult] = await Promise.all([
-      supabase
-        .from("membership_categories")
-        .select("id,name,description,annual_dues,is_active")
-        .eq("is_active", true)
-        .order("name"),
+    const [announcementsResult, missingResult] = await Promise.all([
       supabase
         .from("announcements")
         .select("id,title,body,target_audience,is_pinned,is_urgent,publish_at")
@@ -175,10 +176,6 @@ export function PortalApp() {
         .order("published_at", { ascending: false })
         .limit(6),
     ]);
-
-    if (!categoriesResult.error) {
-      setCategories((categoriesResult.data ?? []) as MembershipCategory[]);
-    }
 
     if (!announcementsResult.error) {
       setAnnouncements((announcementsResult.data ?? []) as Announcement[]);
@@ -223,7 +220,7 @@ export function PortalApp() {
 
   const refreshStaffData = useCallback(async () => {
     if (!supabase || !isStaff) {
-      setPendingOrganizations([]);
+      setMembershipApplications([]);
       setReviewCases([]);
       setCaregivers([]);
       setCaregiverReferences([]);
@@ -232,20 +229,20 @@ export function PortalApp() {
     }
 
     const [
-      organizationsResult,
+      applicationsResult,
       casesResult,
       caregiversResult,
       referencesResult,
       profilesResult,
     ] = await Promise.all([
       supabase
-        .from("member_organizations")
+        .from("membership_applications")
         .select(
-          "id,name,membership_number,contact_person,phone,email,lga,status,renewal_due_date",
+          "id,application_reference,organization_name,membership_category_id,contact_full_name,position_title,email,phone,lga,address,registration_number,year_established,services_offered,status,review_notes,created_at",
         )
-        .in("status", ["pending", "active"])
+        .in("status", ["pending", "under_review"])
         .order("created_at", { ascending: false })
-        .limit(12),
+        .limit(30),
       supabase
         .from("missing_elder_cases")
         .select(
@@ -273,8 +270,10 @@ export function PortalApp() {
         .limit(24),
     ]);
 
-    if (!organizationsResult.error) {
-      setPendingOrganizations((organizationsResult.data ?? []) as MemberOrganization[]);
+    if (!applicationsResult.error) {
+      setMembershipApplications(
+        (applicationsResult.data ?? []) as MembershipApplication[],
+      );
     }
 
     if (!casesResult.error) {
@@ -295,6 +294,21 @@ export function PortalApp() {
       setProfiles((profilesResult.data ?? []) as Profile[]);
     }
   }, [isStaff, supabase]);
+
+  useEffect(() => {
+    const query = new URLSearchParams(window.location.search);
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const authType = hash.get("type");
+
+    if (
+      query.get("invited") === "1" ||
+      authType === "invite" ||
+      authType === "recovery"
+    ) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPasswordSetup(true);
+    }
+  }, []);
 
   useEffect(() => {
     if (!supabase) {
@@ -352,19 +366,11 @@ export function PortalApp() {
     const formData = new FormData(event.currentTarget);
     const email = String(formData.get("email") ?? "");
     const password = String(formData.get("password") ?? "");
-    const fullName = String(formData.get("fullName") ?? "");
 
     setLoading(true);
     setNotice(null);
 
-    const result =
-      mode === "register"
-        ? await supabase.auth.signUp({
-            email,
-            password,
-            options: { data: { full_name: fullName } },
-          })
-        : await supabase.auth.signInWithPassword({ email, password });
+    const result = await supabase.auth.signInWithPassword({ email, password });
 
     setLoading(false);
 
@@ -375,11 +381,36 @@ export function PortalApp() {
 
     setNotice({
       tone: "success",
-      text:
-        mode === "register"
-          ? "Account created. Check your email if verification is enabled."
-          : "Signed in successfully.",
+      text: "Signed in successfully.",
     });
+  }
+
+  async function handlePasswordSetup(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!supabase) return;
+
+    const formData = new FormData(event.currentTarget);
+    const password = String(formData.get("password") ?? "");
+    const confirmation = String(formData.get("confirmation") ?? "");
+
+    if (password !== confirmation) {
+      setNotice({ tone: "error", text: "The passwords do not match." });
+      return;
+    }
+
+    setLoading(true);
+    setNotice(null);
+    const { error } = await supabase.auth.updateUser({ password });
+    setLoading(false);
+
+    if (error) {
+      setNotice({ tone: "error", text: error.message });
+      return;
+    }
+
+    setPasswordSetup(false);
+    window.history.replaceState({}, "", "/portal");
+    setNotice({ tone: "success", text: "Your portal password is ready." });
   }
 
   async function handleSignOut() {
@@ -409,44 +440,6 @@ export function PortalApp() {
     setNotice({
       tone: "success",
       text: "First admin account activated for this Supabase project.",
-    });
-  }
-
-  async function handleMemberApplication(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!supabase || !user) return;
-
-    const formData = new FormData(event.currentTarget);
-    const categoryId = cleanOptional(formData.get("categoryId"));
-
-    setLoading(true);
-    setNotice(null);
-
-    const { error } = await supabase.from("member_organizations").insert({
-      name: String(formData.get("name") ?? ""),
-      category_id: categoryId,
-      contact_person: String(formData.get("contactPerson") ?? ""),
-      position_title: cleanOptional(formData.get("positionTitle")),
-      phone: String(formData.get("phone") ?? ""),
-      email: String(formData.get("email") ?? user.email ?? ""),
-      lga: cleanOptional(formData.get("lga")),
-      address: cleanOptional(formData.get("address")),
-      created_by: user.id,
-    });
-
-    setLoading(false);
-
-    if (error) {
-      setNotice({ tone: "error", text: error.message });
-      return;
-    }
-
-    event.currentTarget.reset();
-    await refreshPrivateData();
-    await refreshStaffData();
-    setNotice({
-      tone: "success",
-      text: "Membership application submitted for admin review.",
     });
   }
 
@@ -527,48 +520,40 @@ export function PortalApp() {
     }
   }
 
-  async function handleOrganizationStatus(
-    organization: MemberOrganization,
-    status: MemberOrganization["status"],
+  async function handleMembershipReview(
+    application: MembershipApplication,
+    decision: "approve" | "reject",
+    notes: string,
   ) {
     if (!supabase) return;
 
     setLoading(true);
     setNotice(null);
 
-    const updates =
-      status === "active"
-        ? (() => {
-            const joinedAt = new Date();
-            const renewalDueAt = new Date(joinedAt);
-            renewalDueAt.setFullYear(joinedAt.getFullYear() + 1);
-
-            return {
-              status,
-              membership_number:
-                organization.membership_number ??
-                `APEC-${new Date().getFullYear()}-${organization.id.slice(0, 6).toUpperCase()}`,
-              date_joined: joinedAt.toISOString().slice(0, 10),
-              renewal_due_date: renewalDueAt.toISOString().slice(0, 10),
-            };
-          })()
-        : { status };
-
-    const { error } = await supabase
-      .from("member_organizations")
-      .update(updates)
-      .eq("id", organization.id);
+    const { data, error } = await supabase.functions.invoke(
+      "review-membership-application",
+      {
+        body: {
+          applicationId: application.id,
+          decision,
+          notes,
+        },
+      },
+    );
 
     setLoading(false);
 
     if (error) {
-      setNotice({ tone: "error", text: error.message });
+      setNotice({ tone: "error", text: data?.error ?? error.message });
       return;
     }
 
     await refreshPrivateData();
     await refreshStaffData();
-    setNotice({ tone: "success", text: `Organisation marked ${status}.` });
+    setNotice({
+      tone: "success",
+      text: data?.message ?? `Application ${decision === "approve" ? "approved" : "rejected"}.`,
+    });
   }
 
   async function handleCaseStatus(
@@ -698,7 +683,7 @@ export function PortalApp() {
         </Link>
         <nav aria-label="Portal navigation">
           <Link href="/">Public Site</Link>
-          <a href="#membership-application">Membership</a>
+          <Link href="/apply">Apply for Membership</Link>
           <a href="#missing-intake">Missing Elders</a>
           <a href="#public-alerts">Public Alerts</a>
         </nav>
@@ -750,6 +735,27 @@ export function PortalApp() {
         </section>
       ) : user ? (
         <>
+          {passwordSetup ? (
+            <section className="portal-card password-setup-card">
+              <span className="portal-kicker">Complete your invitation</span>
+              <h2>Set your portal password</h2>
+              <p>Choose a private password for future APEC Lagos portal access.</p>
+              <form className="portal-form" onSubmit={handlePasswordSetup}>
+                <label>
+                  New password
+                  <input name="password" type="password" required minLength={8} autoComplete="new-password" />
+                </label>
+                <label>
+                  Confirm password
+                  <input name="confirmation" type="password" required minLength={8} autoComplete="new-password" />
+                </label>
+                <button type="submit" disabled={loading}>
+                  {loading ? "Saving password..." : "Set Password"}
+                </button>
+              </form>
+            </section>
+          ) : null}
+
           <section className="portal-grid-layout">
             <article className="portal-card">
               <span className="portal-kicker">Signed in</span>
@@ -793,46 +799,79 @@ export function PortalApp() {
 
           {isStaff ? (
             <section className="portal-admin-stack" aria-label="Admin workflows">
-              <section className="portal-card">
+              {canReviewMembership ? <section className="portal-card">
                 <div className="portal-section-head">
                   <div>
-                    <span className="portal-kicker">Admin review</span>
-                    <h2>Membership Queue</h2>
+                    <span className="portal-kicker">Compliance review</span>
+                    <h2>Membership Applications</h2>
                   </div>
-                  <span>{pendingOrganizations.length} visible</span>
+                  <span>{membershipApplications.length} awaiting review</span>
                 </div>
                 <div className="portal-list">
-                  {pendingOrganizations.length ? (
-                    pendingOrganizations.map((organization) => (
-                      <div className="portal-row-card" key={organization.id}>
-                        <b>{organization.name}</b>
-                        <span>
-                          {organization.contact_person || "No contact"} -{" "}
-                          {organization.lga || "Lagos"} - {organization.status}
-                        </span>
-                        <div className="portal-actions">
+                  {membershipApplications.length ? (
+                    membershipApplications.map((application) => (
+                      <form
+                        className="portal-row-card membership-review-card"
+                        key={application.id}
+                        onSubmit={(event) => event.preventDefault()}
+                      >
+                        <div className="membership-review-head">
+                          <span>
+                            <b>{application.organization_name}</b>
+                            <small>{application.application_reference} · submitted {formatDate(application.created_at)}</small>
+                          </span>
+                          <span className="review-status">{application.status.replace("_", " ")}</span>
+                        </div>
+                        <dl className="membership-review-details">
+                          <div><dt>Contact</dt><dd>{application.contact_full_name}</dd></div>
+                          <div><dt>Position</dt><dd>{application.position_title || "Not supplied"}</dd></div>
+                          <div><dt>Email</dt><dd><a href={`mailto:${application.email}`}>{application.email}</a></dd></div>
+                          <div><dt>Phone</dt><dd><a href={`tel:${application.phone}`}>{application.phone}</a></dd></div>
+                          <div><dt>LGA</dt><dd>{application.lga || "Not supplied"}</dd></div>
+                          <div><dt>Registration</dt><dd>{application.registration_number || "Not supplied"}</dd></div>
+                        </dl>
+                        {application.address ? <p><b>Address:</b> {application.address}</p> : null}
+                        {application.services_offered ? <p><b>Services:</b> {application.services_offered}</p> : null}
+                        <label className="review-notes">
+                          Review notes
+                          <textarea name="reviewNotes" placeholder="Optional internal compliance note" />
+                        </label>
+                        <div className="portal-actions membership-review-actions">
                           <button
                             type="button"
-                            onClick={() => handleOrganizationStatus(organization, "active")}
-                            disabled={loading || organization.status === "active"}
+                            onClick={(event) => {
+                              const form = event.currentTarget.closest("form");
+                              const notes = form
+                                ? String(new FormData(form).get("reviewNotes") ?? "")
+                                : "";
+                              void handleMembershipReview(application, "approve", notes);
+                            }}
+                            disabled={loading}
                           >
-                            Approve
+                            Approve &amp; Send Invitation
                           </button>
                           <button
+                            className="danger-button"
                             type="button"
-                            onClick={() => handleOrganizationStatus(organization, "rejected")}
+                            onClick={(event) => {
+                              const form = event.currentTarget.closest("form");
+                              const notes = form
+                                ? String(new FormData(form).get("reviewNotes") ?? "")
+                                : "";
+                              void handleMembershipReview(application, "reject", notes);
+                            }}
                             disabled={loading}
                           >
                             Reject
                           </button>
                         </div>
-                      </div>
+                      </form>
                     ))
                   ) : (
                     <p>No member applications are waiting for review.</p>
                   )}
                 </div>
-              </section>
+              </section> : null}
 
               <section className="portal-card">
                 <div className="portal-section-head">
@@ -1025,54 +1064,30 @@ export function PortalApp() {
             <div className="portal-section-head">
               <div>
                 <span className="portal-kicker">Membership</span>
-                <h2>Organisation Application</h2>
+                <h2>Your Organisation Records</h2>
               </div>
               <span>{organizations.length} records visible</span>
             </div>
-            <form className="portal-form" onSubmit={handleMemberApplication}>
-              <label>
-                Organisation name
-                <input name="name" required placeholder="Registered care provider name" />
-              </label>
-              <label>
-                Membership category
-                <select name="categoryId">
-                  <option value="">Select category</option>
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Contact person
-                <input name="contactPerson" required placeholder="Primary contact" />
-              </label>
-              <label>
-                Position
-                <input name="positionTitle" placeholder="Director, manager, matron" />
-              </label>
-              <label>
-                Phone
-                <input name="phone" required placeholder="080..." />
-              </label>
-              <label>
-                Email
-                <input name="email" type="email" defaultValue={user.email ?? ""} />
-              </label>
-              <label>
-                LGA
-                <input name="lga" placeholder="Ikeja, Surulere, Lekki..." />
-              </label>
-              <label className="span-2">
-                Address
-                <textarea name="address" placeholder="Facility or office address" />
-              </label>
-              <button type="submit" disabled={loading}>
-                Submit Application
-              </button>
-            </form>
+            {organizations.length ? (
+              <div className="portal-list">
+                {organizations.map((organization) => (
+                  <div key={organization.id}>
+                    <b>{organization.name}</b>
+                    <span>
+                      {organization.membership_number || "Membership number pending"} · {organization.status}
+                      {organization.renewal_due_date
+                        ? ` · renewal ${formatDate(organization.renewal_due_date)}`
+                        : ""}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-membership-state">
+                <p>No organisation is linked to this account yet.</p>
+                <Link className="portal-secondary-button" href="/apply">Submit a Membership Application</Link>
+              </div>
+            )}
           </section>
 
           <section className="portal-card" id="missing-intake">
@@ -1142,13 +1157,7 @@ export function PortalApp() {
         <section className="auth-layout">
           <form className="auth-card" onSubmit={handleAuth}>
             <span className="portal-kicker">Secure access</span>
-            <h2>{mode === "sign-in" ? "Sign in to the portal" : "Create member account"}</h2>
-            {mode === "register" ? (
-              <label>
-                Full name
-                <input name="fullName" required placeholder="Your name" />
-              </label>
-            ) : null}
+            <h2>Sign in to the portal</h2>
             <label>
               Email
               <input name="email" type="email" required placeholder="you@example.com" />
@@ -1158,26 +1167,20 @@ export function PortalApp() {
               <input name="password" type="password" required minLength={6} />
             </label>
             <button type="submit" disabled={loading}>
-              {loading ? "Please wait" : mode === "sign-in" ? "Sign In" : "Register"}
+              {loading ? "Please wait" : "Sign In"}
             </button>
-            <button
-              className="text-button"
-              type="button"
-              onClick={() => setMode(mode === "sign-in" ? "register" : "sign-in")}
-            >
-              {mode === "sign-in"
-                ? "Need an account? Register"
-                : "Already registered? Sign in"}
-            </button>
+            <p className="auth-application-link">
+              Need portal access? <Link href="/apply">Apply for membership</Link>
+            </p>
           </form>
 
           <aside className="portal-card">
             <span className="portal-kicker">What opens next</span>
             <h2>Role-based access</h2>
             <p>
-              New users start as pending members. After approval, admins can
-              activate the profile and assign member, committee, secretary, or
-              super admin access.
+              Applications are reviewed by an authorised compliance officer.
+              Approved member contacts receive a secure email invitation and
+              set their own portal password.
             </p>
           </aside>
         </section>

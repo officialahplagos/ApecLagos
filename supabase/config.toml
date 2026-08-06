@@ -1,0 +1,5 @@
+project_id = "twjpsdtovbfetzbbmlaz"
+
+[functions.review-membership-application]
+verify_jwt = true
+

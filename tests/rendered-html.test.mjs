@@ -40,6 +40,7 @@ test("server-renders the APEC Lagos platform shell", async () => {
   assert.match(html, /If found call/);
   assert.match(html, /Caregiver Reference and Safeguarding Register/);
   assert.match(html, /Caregiver Vetting Workflow/);
+  assert.match(html, /href="\/apply"/);
   assert.match(html, /href="\/portal"/);
   assert.doesNotMatch(
     html,
@@ -58,13 +59,34 @@ test("server-renders the Supabase-backed portal route", async () => {
     /Sign in to the portal|Supabase key needed|Supabase project connected|Loading portal/,
   );
   assert.match(html, /Missing Elder Alerts/);
+  assert.match(html, /Apply for Membership/);
+});
+
+test("server-renders the public membership application route", async () => {
+  const response = await render("/apply");
+  assert.equal(response.status, 200);
+
+  const html = await response.text();
+  assert.match(html, /Apply for APEC Lagos membership/);
+  assert.match(html, /Compliance review/);
+  assert.match(html, /Receive invitation/);
+  assert.match(html, /consentConfirmed/);
+  assert.doesNotMatch(html, /Create member account|Choose a temporary password/i);
 });
 
 test("keeps APEC branding and removes starter preview code", async () => {
-  const [css, page, portal, layout, packageJson] = await Promise.all([
+  const [css, page, portal, application, migration, layout, packageJson] = await Promise.all([
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/PortalApp.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/MembershipApplicationForm.tsx", import.meta.url), "utf8"),
+    readFile(
+      new URL(
+        "../supabase/migrations/20260806120000_membership_application_workflow.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../package.json", import.meta.url), "utf8"),
   ]);
@@ -81,6 +103,11 @@ test("keeps APEC branding and removes starter preview code", async () => {
   assert.match(portal, /createBrowserSupabaseClient/);
   assert.match(portal, /member_organizations/);
   assert.match(portal, /missing_elder_cases/);
+  assert.match(portal, /compliance_officer/);
+  assert.match(portal, /review-membership-application/);
+  assert.match(application, /membership_applications/);
+  assert.match(migration, /Public can submit membership applications/);
+  assert.match(migration, /private\.can_review_membership/);
   assert.doesNotMatch(page + css, /footer-photo-strip|module-photo/);
   assert.match(layout, /APEC Lagos \| Elderly Care Provider Platform/);
   assert.doesNotMatch(

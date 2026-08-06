@@ -5,8 +5,33 @@ export type Profile = {
   email: string | null;
   full_name: string | null;
   phone: string | null;
-  role: "super_admin" | "secretary_admin" | "committee_member" | "member" | "pending_member";
+  role:
+    | "super_admin"
+    | "secretary_admin"
+    | "compliance_officer"
+    | "committee_member"
+    | "member"
+    | "pending_member";
   status: "pending" | "active" | "suspended";
+};
+
+export type MembershipApplication = {
+  id: string;
+  application_reference: string;
+  organization_name: string;
+  membership_category_id: string | null;
+  contact_full_name: string;
+  position_title: string | null;
+  email: string;
+  phone: string;
+  lga: string | null;
+  address: string | null;
+  registration_number: string | null;
+  year_established: number | null;
+  services_offered: string | null;
+  status: "pending" | "under_review" | "approved" | "rejected" | "withdrawn";
+  review_notes: string | null;
+  created_at: string;
 };
 
 export type MembershipCategory = {

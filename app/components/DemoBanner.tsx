@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-const storageKey = "apec-demo-banner-dismissed";
+const storageKey = "apec-pilot-banner-dismissed";
 
 export function DemoBanner() {
   const [dismissed, setDismissed] = useState(false);
@@ -25,10 +25,11 @@ export function DemoBanner() {
         !
       </span>
       <p>
-        <strong>Demo build</strong> — all data below is fictional sample content.
-        No real member, elder, or caregiver information is stored here.
+        <strong>Pilot build</strong> - public records shown are fictional sample
+        content. Membership application details are stored securely for
+        authorised review.
       </p>
-      <button type="button" onClick={dismiss} aria-label="Dismiss demo notice">
+      <button type="button" onClick={dismiss} aria-label="Dismiss pilot notice">
         Dismiss
       </button>
     </div>

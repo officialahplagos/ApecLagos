@@ -189,10 +189,10 @@ export default function Home() {
           <a href="#missing-elders">Missing Elders</a>
           <a href="#caregiver-register">Caregiver Register</a>
           <a href="#vetting">Vetting</a>
-          <a href="#membership">Membership</a>
+          <a href="/apply">Apply for Membership</a>
         </nav>
-        <a className="header-action" href="/portal">
-          Open Portal
+        <a className="header-action" href="/apply">
+          Apply Now
         </a>
         <MobileMenu />
       </header>
@@ -431,13 +431,13 @@ export default function Home() {
           </p>
         </div>
         <div className="portal-grid">
-          <a href="/portal">
+          <a href="/apply">
             <h3>Member Dashboard</h3>
             <p>
-              Membership status, renewal due date, profile summary,
-              announcements, documents, and password management.
+              Apply online, complete compliance review, then receive secure
+              access to membership status, renewals, and announcements.
             </p>
-            <span>Member, pending member</span>
+            <span>Start membership application</span>
           </a>
           <a href="/portal">
             <h3>Admin Dashboard</h3>

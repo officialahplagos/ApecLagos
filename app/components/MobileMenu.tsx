@@ -6,7 +6,7 @@ const links = [
   { href: "#missing-elders", label: "Missing Elders" },
   { href: "#caregiver-register", label: "Caregiver Register" },
   { href: "#vetting", label: "Vetting" },
-  { href: "#membership", label: "Membership" },
+  { href: "/apply", label: "Apply for Membership" },
 ];
 
 export function MobileMenu() {
@@ -71,9 +71,14 @@ export function MobileMenu() {
           ))}
         </nav>
 
-        <a className="drawer-action" href="/portal" onClick={close}>
-          Open Portal
-        </a>
+        <div className="drawer-actions">
+          <a className="drawer-apply-action" href="/apply" onClick={close}>
+            Apply for Membership
+          </a>
+          <a className="drawer-action" href="/portal" onClick={close}>
+            Member Sign In
+          </a>
+        </div>
       </aside>
     </div>
   );

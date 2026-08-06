@@ -22,6 +22,40 @@ set role = 'super_admin', status = 'active'
 where email = 'replace-with-admin-email@example.com';
 ```
 
+## Membership application workflow
+
+Apply migrations in timestamp order. The membership onboarding migration is:
+
+```text
+supabase/migrations/20260806120000_membership_application_workflow.sql
+```
+
+It adds:
+
+- the public `/apply` membership application route;
+- an insert-only public application policy with no public read access;
+- the `compliance_officer` portal role;
+- compliance approval and rejection records;
+- invite-only member account activation.
+
+Deploy the protected approval function after applying the migration:
+
+```powershell
+supabase functions deploy review-membership-application --project-ref twjpsdtovbfetzbbmlaz
+```
+
+The hosted function uses Supabase-provided server secrets. Never add
+`SUPABASE_SERVICE_ROLE_KEY` to frontend or committed environment files.
+
+In Supabase Auth URL Configuration, keep this redirect URL enabled:
+
+```text
+https://apec-lagos.vercel.app/portal
+```
+
+Approved applicants receive an invitation or password setup email. They choose
+their own password; compliance officers never generate or email passwords.
+
 ## Environment variables
 
 Create `.env.local` when the app is ready to connect:
