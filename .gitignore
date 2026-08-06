@@ -21,6 +21,7 @@
 # misc
 .DS_Store
 *.pem
+/.codex-gh-auth/
 
 # debug
 npm-debug.log*

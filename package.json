@@ -6,6 +6,8 @@
     "node": ">=22.13.0"
   },
   "scripts": {
+    "account:check": "node scripts/check-project-identity.mjs",
+    "account:check:all": "node scripts/check-project-identity.mjs --services",
     "dev": "next dev",
     "build": "next build",
     "dev:cloudflare": "node node_modules/vinext/dist/cli.js dev",

@@ -1,0 +1,22 @@
+{
+  "project": "APEC Lagos",
+  "github": {
+    "account": "officialahplagos",
+    "repository": "ApecLagos",
+    "remote": "https://github.com/officialahplagos/ApecLagos.git",
+    "commitName": "officialahplagos",
+    "commitEmail": "officialahplagos@gmail.com"
+  },
+  "supabase": {
+    "organization": "officialahplagos Org",
+    "project": "apec-lagos",
+    "projectRef": "twjpsdtovbfetzbbmlaz",
+    "projectUrl": "https://twjpsdtovbfetzbbmlaz.supabase.co"
+  },
+  "vercel": {
+    "account": "officialahplagos",
+    "team": "officialahplagos-projects",
+    "project": "apec-lagos",
+    "productionUrl": "https://apec-lagos.vercel.app"
+  }
+}
