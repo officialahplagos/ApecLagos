@@ -36,47 +36,6 @@ body {
   margin: 0;
 }
 
-.demo-banner {
-  align-items: center;
-  background: linear-gradient(90deg, #fef3c7 0%, #dbeafe 100%);
-  border-bottom: 1px solid rgba(217, 164, 65, 0.55);
-  color: #17324c;
-  display: grid;
-  gap: 12px;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  padding: 10px clamp(14px, 4vw, 40px);
-}
-
-.demo-banner-icon {
-  align-items: center;
-  background: #d9a441;
-  border-radius: 999px;
-  color: #081c1b;
-  display: inline-flex;
-  font-size: 0.82rem;
-  font-weight: 900;
-  height: 24px;
-  justify-content: center;
-  width: 24px;
-}
-
-.demo-banner p {
-  font-size: 0.92rem;
-  line-height: 1.45;
-  margin: 0;
-}
-
-.demo-banner button {
-  background: rgba(8, 28, 27, 0.92);
-  border: 0;
-  border-radius: 7px;
-  color: var(--white);
-  cursor: pointer;
-  font-size: 0.82rem;
-  font-weight: 800;
-  padding: 8px 11px;
-}
-
 :focus-visible {
   outline: 2px solid var(--teal);
   outline-offset: 3px;
@@ -579,28 +538,6 @@ h1 {
   color: #765f2b;
 }
 
-.status-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.status-grid div {
-  border-bottom: 1px solid var(--line);
-  border-right: 1px solid var(--line);
-  padding: 22px;
-}
-
-.status-grid div:nth-child(2n) {
-  border-right: 0;
-}
-
-.status-grid strong {
-  color: var(--teal-dark);
-  display: block;
-  font-size: 2rem;
-}
-
-.status-grid span,
 .priority-list span,
 .portal-grid span {
   color: #617371;
@@ -781,6 +718,10 @@ h1 {
   margin-top: 32px;
 }
 
+.public-registry-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(480px, 0.9fr);
+}
+
 .elder-board {
   display: grid;
   gap: 14px;
@@ -839,6 +780,40 @@ h1 {
   font-weight: 800;
 }
 
+.missing-photo img {
+  border-radius: 7px;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.public-empty-state {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.public-empty-state h3 {
+  color: var(--navy);
+  font-size: 1.1rem;
+}
+
+.public-empty-state p,
+.elder-public-notes {
+  color: #536967;
+  line-height: 1.6;
+  margin-top: 8px;
+}
+
+.elder-contact-link {
+  color: var(--teal-dark);
+  display: inline-flex;
+  font-weight: 850;
+  margin-top: 12px;
+  text-decoration: none;
+}
+
 .card-topline {
   gap: 12px;
 }
@@ -871,6 +846,88 @@ dd {
   display: grid;
   gap: 14px;
   padding: 22px;
+}
+
+.public-missing-form {
+  align-content: start;
+}
+
+.public-missing-form > div:first-child > p {
+  color: #536967;
+  line-height: 1.55;
+  margin-top: 8px;
+}
+
+.public-intake-fields {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.public-intake-fields .span-2 {
+  grid-column: 1 / -1;
+}
+
+.public-medical-conditions {
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  margin: 0;
+  min-width: 0;
+  padding: 16px;
+}
+
+.public-medical-conditions legend {
+  color: var(--navy);
+  font-size: 0.9rem;
+  font-weight: 850;
+  padding: 0 6px;
+}
+
+.public-medical-conditions > p {
+  color: #536967;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  margin: 0 0 14px;
+}
+
+.intake-form .medical-condition-option {
+  align-items: center;
+  background: #f7faf8;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  cursor: pointer;
+  display: flex;
+  font-weight: 700;
+  gap: 10px;
+  min-height: 44px;
+  padding: 10px 12px;
+}
+
+.intake-form .medical-condition-option input,
+.public-intake-consent input {
+  accent-color: var(--teal);
+  cursor: pointer;
+  flex: 0 0 auto;
+  height: 18px;
+  margin: 0;
+  min-height: 0;
+  padding: 0;
+  width: 18px;
+}
+
+.intake-form .medical-condition-details {
+  margin-top: 14px;
+}
+
+.public-intake-consent {
+  align-items: flex-start;
+  background: #eef7f4;
+  border: 1px solid #b7ded2;
+  border-radius: 7px;
+  display: flex !important;
+  gap: 10px !important;
+  line-height: 1.5;
+  padding: 14px;
 }
 
 .intake-form,
@@ -933,6 +990,12 @@ textarea {
   transform: translateY(-1px);
 }
 
+.intake-form button:disabled {
+  cursor: wait;
+  opacity: 0.68;
+  transform: none;
+}
+
 .register-grid {
   grid-template-columns: minmax(0, 1fr) 360px;
 }
@@ -940,6 +1003,38 @@ textarea {
 .table-panel {
   overflow: hidden;
   padding: 0;
+}
+
+.register-access-copy {
+  padding: 24px;
+}
+
+.register-access-copy h4 {
+  color: var(--navy);
+  font-family: var(--font-display), var(--font-geist-sans), serif;
+  font-size: 1.35rem;
+}
+
+.register-access-copy p {
+  color: #536967;
+  line-height: 1.65;
+  margin-top: 12px;
+}
+
+.register-access-copy ul {
+  color: #314b47;
+  display: grid;
+  gap: 9px;
+  margin: 18px 0 0;
+  padding-left: 20px;
+}
+
+.inline-action {
+  color: var(--teal-dark);
+  display: inline-flex;
+  font-weight: 850;
+  margin-top: 20px;
+  text-decoration: none;
 }
 
 .panel-title {
@@ -999,7 +1094,7 @@ td small {
   margin-top: 12px;
 }
 
-.sample-incident-card {
+.safeguarding-standard {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(217, 164, 65, 0.46);
   border-radius: 8px;
@@ -1009,7 +1104,7 @@ td small {
   padding: 16px;
 }
 
-.sample-incident-card span {
+.safeguarding-standard span {
   background: rgba(217, 164, 65, 0.18);
   border: 1px solid rgba(217, 164, 65, 0.45);
   border-radius: 999px;
@@ -1020,19 +1115,15 @@ td small {
   padding: 5px 8px;
 }
 
-.sample-incident-card h4 {
+.safeguarding-standard h4 {
   color: var(--white);
   font-family: var(--font-display), var(--font-geist-sans), serif;
   font-size: 1.2rem;
   margin: 0;
 }
 
-.sample-incident-card p {
+.safeguarding-standard p {
   margin: 0;
-}
-
-.sample-incident-card small {
-  color: rgba(255, 255, 255, 0.7);
 }
 
 .incident-panel ul {
@@ -2034,16 +2125,6 @@ footer img {
 }
 
 @media (max-width: 680px) {
-  .demo-banner {
-    align-items: start;
-    grid-template-columns: auto minmax(0, 1fr);
-  }
-
-  .demo-banner button {
-    grid-column: 2;
-    justify-self: start;
-  }
-
   .site-header {
     grid-template-columns: 1fr auto;
     margin-inline: 10px;
@@ -2086,7 +2167,6 @@ footer img {
   .module-strip,
   .checklist-grid,
   .portal-grid,
-  .status-grid,
   dl,
   .portal-form,
   .portal-table-row,
@@ -2099,6 +2179,14 @@ footer img {
 
   .medical-condition-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .public-intake-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .public-intake-fields .span-2 {
+    grid-column: auto;
   }
 
   .membership-edit-fields .span-2 {

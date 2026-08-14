@@ -36,8 +36,9 @@ test("server-renders the APEC Lagos platform shell", async () => {
   assert.match(html, /Trusted infrastructure for elderly care providers/);
   assert.match(html, /Missing Elders Registry/);
   assert.match(html, /Last known photo/);
-  assert.match(html, /Contact number if found/);
-  assert.match(html, /If found call/);
+  assert.match(html, /Likely medical conditions/);
+  assert.match(html, /Public callback number/);
+  assert.match(html, /Submit for Officer Review/);
   assert.match(html, /Caregiver Reference and Safeguarding Register/);
   assert.match(html, /Caregiver Vetting Workflow/);
   assert.match(html, /href="\/apply"/);
@@ -74,15 +75,23 @@ test("server-renders the public membership application route", async () => {
   assert.doesNotMatch(html, /Create member account|Choose a temporary password/i);
 });
 
-test("keeps APEC branding and removes starter preview code", async () => {
-  const [css, page, portal, application, migration, serviceRoleMigration, reviewFunction, layout, packageJson] = await Promise.all([
+test("keeps APEC branding and uses production safeguarding workflows", async () => {
+  const [css, page, publicIntake, portal, application, migration, productionMigration, serviceRoleMigration, reviewFunction, layout, packageJson] = await Promise.all([
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/PublicMissingElderRegistry.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/PortalApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/MembershipApplicationForm.tsx", import.meta.url), "utf8"),
     readFile(
       new URL(
         "../supabase/migrations/20260806120000_membership_application_workflow.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+    readFile(
+      new URL(
+        "../supabase/migrations/20260814150000_public_missing_elder_intake_and_application_edits.sql",
         import.meta.url,
       ),
       "utf8",
@@ -111,9 +120,11 @@ test("keeps APEC branding and removes starter preview code", async () => {
   assert.match(css, /\.mobile-drawer/);
   assert.match(css, /\.footer-icon-strip/);
   assert.match(css, /\.portal-shell/);
-  assert.match(page, /missingElders/);
+  assert.match(page, /PublicMissingElderRegistry/);
   assert.match(page, /vettingSteps/);
-  assert.match(page, /referenceRows/);
+  assert.match(publicIntake, /submit_missing_elder_report/);
+  assert.match(publicIntake, /Likely medical conditions/);
+  assert.match(publicIntake, /consentConfirmed/);
   assert.match(portal, /createBrowserSupabaseClient/);
   assert.match(portal, /member_organizations/);
   assert.match(portal, /missing_elder_cases/);
@@ -127,17 +138,21 @@ test("keeps APEC branding and removes starter preview code", async () => {
   assert.match(portal, /Secure invitation link/);
   assert.match(portal, /FunctionsHttpError/);
   assert.match(portal, /handleMembershipApplicationUpdate/);
+  assert.match(portal, /update_membership_application_for_review/);
   assert.match(application, /membership_applications/);
   assert.match(migration, /Public can submit membership applications/);
   assert.match(migration, /private\.can_review_membership/);
   assert.match(serviceRoleMigration, /membership_applications to service_role/);
   assert.match(serviceRoleMigration, /member_organizations to service_role/);
+  assert.match(productionMigration, /submit_missing_elder_report/);
+  assert.match(productionMigration, /Public can read published missing elder photos/);
+  assert.match(productionMigration, /update_membership_application_for_review/);
   assert.match(reviewFunction, /2026-08-14-approval-fallback/);
   assert.match(reviewFunction, /generateLink/);
-  assert.doesNotMatch(page + css, /footer-photo-strip|module-photo/);
+  assert.doesNotMatch(page + css, /footer-photo-strip|module-photo|demo-banner/);
   assert.match(layout, /APEC Lagos \| Elderly Care Provider Platform/);
   assert.doesNotMatch(
-    page + layout + packageJson,
-    /codex-preview|_sites-preview|react-loading-skeleton|Starter Project/,
+    page + portal + layout + packageJson,
+    /codex-preview|_sites-preview|react-loading-skeleton|Starter Project|fictional|sample data|demo portal|pilot build/i,
   );
 });

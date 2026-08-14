@@ -43,56 +43,6 @@ const roleOptions: Profile["role"][] = [
   "super_admin",
 ];
 
-const sampleAnnouncements: Announcement[] = [
-  {
-    id: "sample-announcement-001",
-    title: "SAMPLE: Member briefing draft",
-    body: "Fictional sample announcement showing how approved member notices will appear in the portal.",
-    target_audience: "members",
-    is_pinned: true,
-    is_urgent: false,
-    publish_at: "2026-07-29T00:00:00.000Z",
-  },
-  {
-    id: "sample-announcement-002",
-    title: "SAMPLE: Renewal reminder",
-    body: "Fictional reminder for demonstrating renewal and document workflows before launch.",
-    target_audience: "members",
-    is_pinned: false,
-    is_urgent: false,
-    publish_at: "2026-07-29T00:00:00.000Z",
-  },
-];
-
-const sampleMissingCases: MissingElderCase[] = [
-  {
-    id: "sample-missing-001",
-    public_reference: "SAMPLE-ME-001",
-    elder_name: "Case Sample 001",
-    approximate_age: 78,
-    photo_path: null,
-    last_seen_location: "Sample Lagos location A",
-    last_seen_at: "2026-07-29T07:30:00.000Z",
-    public_notes: "SAMPLE: fictional public alert preview. If found call +234 000 000 0000.",
-    police_reference: "SAMPLE-REF",
-    status: "active",
-    published_at: "2026-07-29T08:00:00.000Z",
-  },
-  {
-    id: "sample-missing-002",
-    public_reference: "SAMPLE-ME-002",
-    elder_name: "Case Sample 002",
-    approximate_age: 82,
-    photo_path: null,
-    last_seen_location: "Sample Lagos location B",
-    last_seen_at: "2026-07-28T17:45:00.000Z",
-    public_notes: "SAMPLE: fictional police-notified alert for demo review.",
-    police_reference: "SAMPLE-REF",
-    status: "active",
-    published_at: "2026-07-29T08:05:00.000Z",
-  },
-];
-
 function getErrorMessage(error: unknown) {
   if ((error as AuthError | null)?.message) {
     return (error as AuthError).message;
@@ -163,6 +113,7 @@ export function PortalApp() {
   const [passwordSetup, setPasswordSetup] = useState(false);
   const [editingApplicationId, setEditingApplicationId] = useState<string | null>(null);
   const [membershipActionId, setMembershipActionId] = useState<string | null>(null);
+  const [membershipFeedback, setMembershipFeedback] = useState<Record<string, Notice>>({});
   const [manualInvitation, setManualInvitation] = useState<ManualInvitation | null>(null);
 
   const isStaff =
@@ -176,11 +127,6 @@ export function PortalApp() {
     profile?.role === "super_admin" ||
     profile?.role === "secretary_admin" ||
     profile?.role === "compliance_officer";
-  const visibleAnnouncements = announcements.length ? announcements : sampleAnnouncements;
-  const visibleMissingCases = missingCases.length ? missingCases : sampleMissingCases;
-  const usingSampleAnnouncements = announcements.length === 0;
-  const usingSampleMissingCases = missingCases.length === 0;
-
   const refreshPublicData = useCallback(async () => {
     if (!supabase) return;
 
@@ -193,7 +139,7 @@ export function PortalApp() {
       supabase
         .from("missing_elder_cases")
         .select(
-          "id,public_reference,elder_name,approximate_age,photo_path,last_seen_location,last_seen_at,public_notes,police_reference,status,published_at",
+          "id,public_reference,elder_name,approximate_age,photo_path,last_seen_location,last_seen_at,public_notes,police_reference,public_contact_phone,status,published_at",
         )
         .order("published_at", { ascending: false })
         .limit(6),
@@ -268,7 +214,7 @@ export function PortalApp() {
       supabase
         .from("missing_elder_cases")
         .select(
-          "id,public_reference,elder_name,approximate_age,photo_path,last_seen_location,last_seen_at,public_notes,police_reference,status,published_at",
+          "id,public_reference,elder_name,approximate_age,photo_path,last_seen_location,last_seen_at,public_notes,police_reference,public_contact_phone,status,published_at",
         )
         .in("status", ["pending_review", "active"])
         .order("created_at", { ascending: false })
@@ -507,6 +453,7 @@ export function PortalApp() {
           last_seen_at: cleanOptional(formData.get("lastSeenAt")),
           public_notes: cleanOptional(formData.get("publicNotes")),
           police_reference: cleanOptional(formData.get("policeReference")),
+          public_contact_phone: String(formData.get("contactPhone") ?? "").trim(),
           status: "pending_review",
           created_by: user.id,
         })
@@ -614,35 +561,45 @@ export function PortalApp() {
 
     setMembershipActionId(application.id);
     setNotice(null);
+    setMembershipFeedback((current) => {
+      const next = { ...current };
+      delete next[application.id];
+      return next;
+    });
 
-    const { error } = await supabase
-      .from("membership_applications")
-      .update({
-        organization_name: String(formData.get("organizationName") ?? "").trim(),
-        contact_full_name: String(formData.get("contactFullName") ?? "").trim(),
-        position_title: cleanOptional(formData.get("positionTitle")),
-        email: String(formData.get("email") ?? "").trim().toLowerCase(),
-        phone: String(formData.get("phone") ?? "").trim(),
-        lga: cleanOptional(formData.get("lga")),
-        address: cleanOptional(formData.get("address")),
-        registration_number: cleanOptional(formData.get("registrationNumber")),
-        year_established: Number.isFinite(yearEstablished) ? yearEstablished : null,
-        services_offered: cleanOptional(formData.get("servicesOffered")),
-        status: "under_review",
-      })
-      .eq("id", application.id)
-      .in("status", ["pending", "under_review"]);
+    const { error } = await supabase.rpc("update_membership_application_for_review", {
+      p_application_id: application.id,
+      p_organization_name: String(formData.get("organizationName") ?? "").trim(),
+      p_contact_full_name: String(formData.get("contactFullName") ?? "").trim(),
+      p_position_title: cleanOptional(formData.get("positionTitle")),
+      p_email: String(formData.get("email") ?? "").trim().toLowerCase(),
+      p_phone: String(formData.get("phone") ?? "").trim(),
+      p_lga: cleanOptional(formData.get("lga")),
+      p_address: cleanOptional(formData.get("address")),
+      p_registration_number: cleanOptional(formData.get("registrationNumber")),
+      p_year_established: Number.isFinite(yearEstablished) ? yearEstablished : null,
+      p_services_offered: cleanOptional(formData.get("servicesOffered")),
+    });
 
     setMembershipActionId(null);
 
     if (error) {
-      setNotice({ tone: "error", text: error.message });
+      setMembershipFeedback((current) => ({
+        ...current,
+        [application.id]: { tone: "error", text: error.message },
+      }));
       return;
     }
 
     setEditingApplicationId(null);
     await refreshStaffData();
-    setNotice({ tone: "success", text: "Application changes saved for compliance review." });
+    setMembershipFeedback((current) => ({
+      ...current,
+      [application.id]: {
+        tone: "success",
+        text: "Application changes saved for compliance review.",
+      },
+    }));
   }
 
   async function copyInvitationLink() {
@@ -796,7 +753,7 @@ export function PortalApp() {
 
       <section className="portal-hero">
         <div>
-          <span className="eyebrow">Board-ready demo portal</span>
+          <span className="eyebrow">Secure association portal</span>
           <h1>Member access, applications, and safeguarding intake.</h1>
           <p>
             This portal connects the APEC Lagos platform to Supabase Auth,
@@ -839,8 +796,7 @@ export function PortalApp() {
         <section className="portal-card">
           <h2>Loading portal</h2>
           <p>
-            Checking the current Supabase session. Log in as a demo member to
-            view sample records.
+            Checking your secure APEC Lagos session.
           </p>
         </section>
       ) : user ? (
@@ -964,6 +920,11 @@ export function PortalApp() {
                           Review notes
                           <textarea name="reviewNotes" placeholder="Optional internal compliance note" />
                         </label> : null}
+                        {membershipFeedback[application.id] ? (
+                          <div className={`portal-notice ${membershipFeedback[application.id].tone}`} role="status">
+                            {membershipFeedback[application.id].text}
+                          </div>
+                        ) : null}
                         <div className="portal-actions membership-review-actions">
                           {isEditing ? <>
                             <button type="submit" disabled={isWorking}>{isWorking ? "Saving..." : "Save Changes"}</button>
@@ -1034,6 +995,9 @@ export function PortalApp() {
                             <small>
                               {caseItem.public_reference} - {caseItem.last_seen_location}
                             </small>
+                            {caseItem.public_contact_phone ? (
+                              <small>Public callback: {caseItem.public_contact_phone}</small>
+                            ) : null}
                           </span>
                           <div className="portal-actions">
                             <button
@@ -1349,18 +1313,18 @@ export function PortalApp() {
         <article className="portal-card">
           <div className="portal-section-head">
             <h2>Announcements</h2>
-            <span>{usingSampleAnnouncements ? "Sample" : visibleAnnouncements.length}</span>
+            <span>{announcements.length}</span>
           </div>
           <div className="portal-list">
-            {visibleAnnouncements.length ? (
-              visibleAnnouncements.map((announcement) => (
+            {announcements.length ? (
+              announcements.map((announcement) => (
                 <div key={announcement.id}>
                   <b>{announcement.title}</b>
                   <span>{announcement.body}</span>
                 </div>
               ))
             ) : (
-              <p>Sample announcements will appear here when the demo data loads.</p>
+              <p>No announcements have been published.</p>
             )}
           </div>
         </article>
@@ -1368,11 +1332,11 @@ export function PortalApp() {
         <article className="portal-card">
           <div className="portal-section-head">
             <h2>Missing Elder Alerts</h2>
-            <span>{usingSampleMissingCases ? "Sample" : visibleMissingCases.length}</span>
+            <span>{missingCases.length}</span>
           </div>
           <div className="portal-list">
-            {visibleMissingCases.length ? (
-              visibleMissingCases.map((caseItem) => {
+            {missingCases.length ? (
+              missingCases.map((caseItem) => {
                 const photoUrl = getPhotoUrl(caseItem.photo_path);
                 return (
                   <div className="portal-row-card with-photo" key={caseItem.id}>
@@ -1391,12 +1355,15 @@ export function PortalApp() {
                         {caseItem.last_seen_location} - {formatDate(caseItem.last_seen_at)}
                       </small>
                       {caseItem.public_notes ? <small>{caseItem.public_notes}</small> : null}
+                      {caseItem.public_contact_phone ? (
+                        <small>If found, call {caseItem.public_contact_phone}</small>
+                      ) : null}
                     </span>
                   </div>
                 );
               })
             ) : (
-              <p>Sample public alerts will appear here when the demo data loads.</p>
+              <p>No verified public alerts are active.</p>
             )}
           </div>
         </article>

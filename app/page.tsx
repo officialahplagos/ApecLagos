@@ -1,35 +1,5 @@
 import { MobileMenu } from "./components/MobileMenu";
-import { StatGrid } from "./components/StatGrid";
-
-const missingElders = [
-  {
-    name: "Case Sample 001",
-    age: "78",
-    lastSeen: "Sample Lagos location A",
-    date: "Sample time 07:30",
-    risk: "Sample risk note",
-    contact: "+234 000 000 0000",
-    status: "Active alert",
-  },
-  {
-    name: "Case Sample 002",
-    age: "82",
-    lastSeen: "Sample Lagos location B",
-    date: "Sample time 17:45",
-    risk: "Sample risk note",
-    contact: "+234 000 000 0000",
-    status: "Police notified",
-  },
-  {
-    name: "Case Sample 003",
-    age: "74",
-    lastSeen: "Sample Lagos location C",
-    date: "Sample closed case",
-    risk: "Sample resolved note",
-    contact: "Case closed",
-    status: "Closed",
-  },
-];
+import { PublicMissingElderRegistry } from "./components/PublicMissingElderRegistry";
 
 const vettingSteps = [
   "NIN verification with consent",
@@ -42,30 +12,6 @@ const vettingSteps = [
   "Practical care assessment",
   "Medical fitness declaration",
   "Six-month probation reviews",
-];
-
-const referenceRows = [
-  {
-    caregiver: "Sample Caregiver 001",
-    role: "Live-in caregiver",
-    employer: "Verified member home",
-    period: "2023 - 2026",
-    rating: "Reference confirmed",
-  },
-  {
-    caregiver: "Sample Caregiver 002",
-    role: "Healthcare assistant",
-    employer: "Day-care provider",
-    period: "2022 - 2025",
-    rating: "Good conduct record",
-  },
-  {
-    caregiver: "Sample Caregiver 003",
-    role: "Nurse aide",
-    employer: "Residential care facility",
-    period: "2021 - 2024",
-    rating: "Licence checked",
-  },
 ];
 
 const modules = [
@@ -92,16 +38,9 @@ const modules = [
 ];
 
 const trustSignals = [
-  "Consent-led records",
-  "RLS-first database",
-  "Restricted incident access",
-];
-
-const statusStats = [
-  { value: 14, label: "elder alerts" },
-  { value: 86, label: "member records" },
-  { value: 23, label: "reference checks" },
-  { value: 4, label: "pending reviews" },
+  "Officer-reviewed public alerts",
+  "Private medical details",
+  "Role-based member access",
 ];
 
 function AppIcon({ name }: { name: string }) {
@@ -204,15 +143,14 @@ export default function Home() {
           <p>
             APEC Lagos brings membership operations, missing elder alerts,
             caregiver references, and safeguarding reviews into one secure,
-            platform designed for board-level reporting across Lagos State care
-            providers.
+            coordinated platform for elderly care providers across Lagos State.
           </p>
           <div className="hero-actions">
-            <a className="primary-button" href="#membership">
-              View Platform
+            <a className="primary-button" href="#missing-elders">
+              Report a Missing Elder
             </a>
-            <a className="secondary-button" href="#caregiver-register">
-              Review Registers
+            <a className="secondary-button" href="/apply">
+              Apply for Membership
             </a>
           </div>
           <div className="trust-row" aria-label="Platform trust signals">
@@ -223,27 +161,26 @@ export default function Home() {
         </div>
         <div className="command-panel" aria-label="APEC platform overview">
           <div className="panel-header">
-            <span>Executive Safeguarding Console</span>
-            <strong>Live</strong>
+            <span>Safeguarding Response</span>
+            <strong>Operational</strong>
           </div>
           <div className="case-spotlight">
-            <span>Priority watch (sample data)</span>
-            <b>2 high-risk elder alerts need officer review</b>
-            <small>Last updated from the secure operations queue</small>
+            <span>Missing elder reporting</span>
+            <b>Send verified details to the safeguarding team</b>
+            <small>Reports remain private until an authorised officer approves publication.</small>
           </div>
-          <StatGrid stats={statusStats} />
           <div className="priority-list">
             <div>
-              <b>Consent queue</b>
-              <span>7 caregiver records awaiting signed consent</span>
+              <b>Public intake</b>
+              <span>Families and members of the public can submit a report.</span>
             </div>
             <div>
-              <b>Documents</b>
-              <span>Police certificate and licence uploads due this week</span>
+              <b>Officer verification</b>
+              <span>Safeguarding staff review each report before publication.</span>
             </div>
             <div>
-              <b>Announcements</b>
-              <span>Quarterly care home meeting draft ready for approval</span>
+              <b>Protected information</b>
+              <span>Medical, family, and reporter details remain restricted.</span>
             </div>
           </div>
         </div>
@@ -270,70 +207,7 @@ export default function Home() {
             Private family, medical, and submitter details stay restricted.
           </p>
         </div>
-        <div className="registry-layout">
-          <div className="elder-board">
-            {missingElders.map((elder) => (
-              <article className="elder-card" key={elder.name}>
-                <div className="missing-photo">
-                  <AppIcon name="photo" />
-                  <span>Last photo</span>
-                </div>
-                <div>
-                  <div className="card-topline">
-                    <h3>{elder.name}</h3>
-                    <span>{elder.status}</span>
-                  </div>
-                  <dl>
-                    <div>
-                      <dt>Age</dt>
-                      <dd>{elder.age}</dd>
-                    </div>
-                    <div>
-                      <dt>Last seen</dt>
-                      <dd>{elder.lastSeen}</dd>
-                    </div>
-                    <div>
-                      <dt>Time</dt>
-                      <dd>{elder.date}</dd>
-                    </div>
-                    <div>
-                      <dt>Risk note</dt>
-                      <dd>{elder.risk}</dd>
-                    </div>
-                    <div>
-                      <dt>If found call</dt>
-                      <dd>{elder.contact}</dd>
-                    </div>
-                  </dl>
-                </div>
-              </article>
-            ))}
-          </div>
-          <form className="intake-form">
-            <h3>Alert intake</h3>
-            <label>
-              Elder&apos;s full name
-              <input placeholder="Name to be reviewed" />
-            </label>
-            <label>
-              Last known photo
-              <input type="file" accept="image/png,image/jpeg,image/webp" />
-            </label>
-            <label>
-              Last seen location
-              <input placeholder="Street, LGA, landmark" />
-            </label>
-            <label>
-              Contact number if found
-              <input placeholder="Family or reporting officer number" />
-            </label>
-            <label>
-              Safeguarding notes
-              <textarea placeholder="Medical risks, clothing, police reference" />
-            </label>
-            <button type="button">Submit for Review</button>
-          </form>
-        </div>
+        <PublicMissingElderRegistry />
       </section>
 
       <section className="workspace-band contrast" id="caregiver-register">
@@ -349,32 +223,24 @@ export default function Home() {
         <div className="register-grid">
           <div className="table-panel">
             <div className="panel-title">
-              <h3>Reference Register</h3>
-              <span>Consent verified</span>
+              <h3>Caregiver Reference Register</h3>
+              <span>Approved members</span>
             </div>
-            <table>
-              <thead>
-                <tr>
-                  <th>Caregiver</th>
-                  <th>Role</th>
-                  <th>Period</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {referenceRows.map((row) => (
-                  <tr key={row.caregiver}>
-                    <td>
-                      <b>{row.caregiver}</b>
-                      <small>{row.employer}</small>
-                    </td>
-                    <td>{row.role}</td>
-                    <td>{row.period}</td>
-                    <td>{row.rating}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="register-access-copy">
+              <h4>Verified employment history, shared responsibly.</h4>
+              <p>
+                Member organisations can contribute employment references only
+                with the caregiver&apos;s consent. Access is restricted to approved
+                association users carrying out legitimate recruitment checks.
+              </p>
+              <ul>
+                <li>Previous role and employment period</li>
+                <li>Supervisor reference and rehire eligibility</li>
+                <li>Consent status and verification outcome</li>
+                <li>Documented correction and dispute process</li>
+              </ul>
+              <a className="inline-action" href="/portal">Member sign in</a>
+            </div>
           </div>
           <div className="incident-panel">
             <h3>Safeguarding Incident Register</h3>
@@ -382,14 +248,13 @@ export default function Home() {
               This replaces a casual blacklist with a controlled Do Not Rehire
               and incident review workflow.
             </p>
-            <article className="sample-incident-card">
-              <span>SAMPLE</span>
-              <h4>Sample incident review 001</h4>
+            <article className="safeguarding-standard">
+              <span>Controlled access</span>
+              <h4>Evidence-led review before any restriction</h4>
               <p>
-                Fictional case showing evidence upload, reviewer assignment,
-                caregiver response, and final safeguarding outcome.
+                Incident information is not a public blacklist. Authorised
+                reviewers document evidence, responses, decisions, and appeals.
               </p>
-              <small>Status: Under review - severity: medium</small>
             </article>
             <ul>
               <li>Evidence upload required before review</li>
@@ -448,12 +313,12 @@ export default function Home() {
             <span>Secretary, admin, super admin</span>
           </a>
           <a href="/portal">
-            <h3>Supabase Tables</h3>
+            <h3>Safeguarding Records</h3>
             <p>
-              Structured data model covering members, renewals, documents,
-              missing elder cases, caregiver references, and incident reviews.
+              Controlled records for missing elder cases, caregiver references,
+              compliance checks, and incident reviews.
             </p>
-            <span>Structured safeguarding data model</span>
+            <span>Authorised access only</span>
           </a>
         </div>
       </section>

@@ -74,6 +74,7 @@ export type MissingElderCase = {
   last_seen_at: string | null;
   public_notes: string | null;
   police_reference: string | null;
+  public_contact_phone: string | null;
   status: "pending_review" | "active" | "found" | "closed" | "rejected";
   published_at: string | null;
 };
