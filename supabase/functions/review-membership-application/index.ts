@@ -15,6 +15,7 @@ type InvitationResult = {
 
 const allowedHeaders =
   "authorization, x-client-info, apikey, content-type";
+const functionVersion = "2026-08-14-approval-fallback";
 
 function response(origin: string, body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -23,6 +24,7 @@ function response(origin: string, body: unknown, status = 200) {
       "Content-Type": "application/json",
       "Access-Control-Allow-Origin": origin,
       "Access-Control-Allow-Headers": allowedHeaders,
+      "X-APEC-Function-Version": functionVersion,
       Vary: "Origin",
     },
   });

@@ -75,7 +75,7 @@ test("server-renders the public membership application route", async () => {
 });
 
 test("keeps APEC branding and removes starter preview code", async () => {
-  const [css, page, portal, application, migration, layout, packageJson] = await Promise.all([
+  const [css, page, portal, application, migration, reviewFunction, layout, packageJson] = await Promise.all([
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/PortalApp.tsx", import.meta.url), "utf8"),
@@ -83,6 +83,13 @@ test("keeps APEC branding and removes starter preview code", async () => {
     readFile(
       new URL(
         "../supabase/migrations/20260806120000_membership_application_workflow.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+    readFile(
+      new URL(
+        "../supabase/functions/review-membership-application/index.ts",
         import.meta.url,
       ),
       "utf8",
@@ -112,6 +119,8 @@ test("keeps APEC branding and removes starter preview code", async () => {
   assert.match(application, /membership_applications/);
   assert.match(migration, /Public can submit membership applications/);
   assert.match(migration, /private\.can_review_membership/);
+  assert.match(reviewFunction, /2026-08-14-approval-fallback/);
+  assert.match(reviewFunction, /generateLink/);
   assert.doesNotMatch(page + css, /footer-photo-strip|module-photo/);
   assert.match(layout, /APEC Lagos \| Elderly Care Provider Platform/);
   assert.doesNotMatch(
