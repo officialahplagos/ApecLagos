@@ -139,6 +139,10 @@ test("keeps APEC branding and uses production safeguarding workflows", async () 
   assert.match(portal, /FunctionsHttpError/);
   assert.match(portal, /handleMembershipApplicationUpdate/);
   assert.match(portal, /update_membership_application_for_review/);
+  assert.match(portal, /applicationEditDirty/);
+  assert.match(portal, /form\.reportValidity\(\)/);
+  assert.match(portal, /disabled=\{isWorking \|\| !applicationEditDirty\}/);
+  assert.doesNotMatch(portal, /if \(isEditing\) void handleMembershipApplicationUpdate/);
   assert.match(application, /membership_applications/);
   assert.match(migration, /Public can submit membership applications/);
   assert.match(migration, /private\.can_review_membership/);

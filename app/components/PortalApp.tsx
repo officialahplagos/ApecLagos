@@ -112,6 +112,7 @@ export function PortalApp() {
   const [notice, setNotice] = useState<Notice | null>(null);
   const [passwordSetup, setPasswordSetup] = useState(false);
   const [editingApplicationId, setEditingApplicationId] = useState<string | null>(null);
+  const [applicationEditDirty, setApplicationEditDirty] = useState(false);
   const [membershipActionId, setMembershipActionId] = useState<string | null>(null);
   const [membershipFeedback, setMembershipFeedback] = useState<Record<string, Notice>>({});
   const [manualInvitation, setManualInvitation] = useState<ManualInvitation | null>(null);
@@ -549,13 +550,11 @@ export function PortalApp() {
   }
 
   async function handleMembershipApplicationUpdate(
-    event: FormEvent<HTMLFormElement>,
+    formData: FormData,
     application: MembershipApplication,
   ) {
-    event.preventDefault();
     if (!supabase) return;
 
-    const formData = new FormData(event.currentTarget);
     const yearText = String(formData.get("yearEstablished") ?? "").trim();
     const yearEstablished = yearText ? Number(yearText) : null;
 
@@ -592,6 +591,7 @@ export function PortalApp() {
     }
 
     setEditingApplicationId(null);
+    setApplicationEditDirty(false);
     await refreshStaffData();
     setMembershipFeedback((current) => ({
       ...current,
@@ -881,9 +881,9 @@ export function PortalApp() {
                       return <form
                         className="portal-row-card membership-review-card"
                         key={application.id}
-                        onSubmit={(event) => {
-                          if (isEditing) void handleMembershipApplicationUpdate(event, application);
-                          else event.preventDefault();
+                        onSubmit={(event) => event.preventDefault()}
+                        onChange={() => {
+                          if (isEditing) setApplicationEditDirty(true);
                         }}
                       >
                         <div className="membership-review-head">
@@ -927,10 +927,42 @@ export function PortalApp() {
                         ) : null}
                         <div className="portal-actions membership-review-actions">
                           {isEditing ? <>
-                            <button type="submit" disabled={isWorking}>{isWorking ? "Saving..." : "Save Changes"}</button>
-                            <button className="portal-secondary-button" type="button" onClick={() => setEditingApplicationId(null)} disabled={isWorking}>Cancel</button>
+                            <button
+                              type="button"
+                              disabled={isWorking || !applicationEditDirty}
+                              onClick={(event) => {
+                                const form = event.currentTarget.closest("form");
+                                if (!form || !form.reportValidity()) return;
+                                void handleMembershipApplicationUpdate(new FormData(form), application);
+                              }}
+                            >
+                              {isWorking ? "Saving..." : "Save Changes"}
+                            </button>
+                            <button
+                              className="portal-secondary-button"
+                              type="button"
+                              onClick={() => {
+                                setEditingApplicationId(null);
+                                setApplicationEditDirty(false);
+                              }}
+                              disabled={isWorking}
+                            >
+                              Cancel
+                            </button>
                           </> : <>
-                            <button className="portal-secondary-button" type="button" onClick={() => setEditingApplicationId(application.id)} disabled={Boolean(membershipActionId)}>Edit Application</button>
+                            <button
+                              className="portal-secondary-button"
+                              type="button"
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                setEditingApplicationId(application.id);
+                                setApplicationEditDirty(false);
+                              }}
+                              disabled={Boolean(membershipActionId)}
+                            >
+                              Edit Application
+                            </button>
                             <button
                             type="button"
                             onClick={(event) => {
