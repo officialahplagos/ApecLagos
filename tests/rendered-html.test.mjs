@@ -117,6 +117,10 @@ test("keeps APEC branding and removes starter preview code", async () => {
   assert.match(portal, /createBrowserSupabaseClient/);
   assert.match(portal, /member_organizations/);
   assert.match(portal, /missing_elder_cases/);
+  assert.match(portal, /Likely medical conditions/);
+  assert.match(portal, /medicalConditions/);
+  assert.match(portal, /medicalRisksOther/);
+  assert.match(portal, /buildMedicalRisks/);
   assert.match(portal, /compliance_officer/);
   assert.match(portal, /review-membership-application/);
   assert.match(portal, /Edit Application/);

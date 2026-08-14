@@ -118,6 +118,20 @@ function cleanOptional(value: FormDataEntryValue | null) {
   return text || null;
 }
 
+function buildMedicalRisks(formData: FormData) {
+  const selectedConditions = formData
+    .getAll("medicalConditions")
+    .map((value) => String(value).trim())
+    .filter(Boolean);
+  const otherDetails = cleanOptional(formData.get("medicalRisksOther"));
+
+  if (otherDetails) {
+    selectedConditions.push(`Other details: ${otherDetails}`);
+  }
+
+  return selectedConditions.length ? selectedConditions.join("; ") : null;
+}
+
 function buildReference(prefix: string) {
   return `${prefix}-${Date.now().toString().slice(-8)}`;
 }
@@ -509,7 +523,7 @@ export function PortalApp() {
           submitter_phone: cleanOptional(formData.get("submitterPhone")),
           family_contact_name: String(formData.get("contactName") ?? ""),
           family_contact_phone: String(formData.get("contactPhone") ?? ""),
-          medical_risks: cleanOptional(formData.get("medicalRisks")),
+          medical_risks: buildMedicalRisks(formData),
         });
 
       if (detailsError) throw detailsError;
@@ -1262,10 +1276,36 @@ export function PortalApp() {
                 Public notes
                 <textarea name="publicNotes" placeholder="Clothing, safe approach guidance, public description" />
               </label>
-              <label className="span-2">
-                Medical risks
-                <textarea name="medicalRisks" placeholder="Private safeguarding details for reviewers" />
-              </label>
+              <fieldset className="medical-conditions span-2" aria-describedby="medical-conditions-help">
+                <legend>Likely medical conditions</legend>
+                <p id="medical-conditions-help">
+                  Select all that may apply. These details remain restricted to authorised staff.
+                </p>
+                <div className="medical-condition-grid">
+                  {[
+                    "Dementia or memory loss",
+                    "Epilepsy or seizure disorder",
+                    "Hypertension",
+                    "Diabetes",
+                    "Heart condition",
+                    "Stroke history",
+                    "Asthma or breathing difficulty",
+                    "Mobility difficulty",
+                  ].map((condition) => (
+                    <label className="medical-condition-option" key={condition}>
+                      <input name="medicalConditions" type="checkbox" value={condition} />
+                      <span>{condition}</span>
+                    </label>
+                  ))}
+                </div>
+                <label className="medical-condition-details">
+                  Other condition or important details
+                  <textarea
+                    name="medicalRisksOther"
+                    placeholder="Add another likely condition, medication need, or relevant detail"
+                  />
+                </label>
+              </fieldset>
               <button type="submit" disabled={loading}>
                 Submit Alert
               </button>
