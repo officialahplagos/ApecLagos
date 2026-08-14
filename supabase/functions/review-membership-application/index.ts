@@ -1,9 +1,16 @@
-import { createClient } from "npm:@supabase/supabase-js@2.111.0";
+import { createClient, type User } from "npm:@supabase/supabase-js@2.111.0";
 
 type ReviewRequest = {
   applicationId?: string;
   decision?: "approve" | "reject";
   notes?: string;
+};
+
+type InvitationResult = {
+  authUser: User;
+  delivery: "email" | "manual_link";
+  invitationLink?: string;
+  warning?: string;
 };
 
 const allowedHeaders =
@@ -32,6 +39,90 @@ function getAllowedOrigin(request: Request) {
   ]);
 
   return allowedOrigins.has(origin) ? origin : productionOrigin;
+}
+
+async function createInvitation(
+  adminClient: ReturnType<typeof createClient>,
+  email: string,
+  fullName: string,
+  applicationId: string,
+  redirectTo: string,
+): Promise<InvitationResult> {
+  const metadata = {
+    full_name: fullName,
+    membership_application_id: applicationId,
+  };
+  const { data: inviteData, error: inviteError } =
+    await adminClient.auth.admin.inviteUserByEmail(email, {
+      data: metadata,
+      redirectTo,
+    });
+
+  if (!inviteError && inviteData.user) {
+    return { authUser: inviteData.user, delivery: "email" };
+  }
+
+  // Supabase's default mail service can reject or rate-limit external addresses.
+  // Generate the same secure invite without sending it so compliance can share it.
+  const { data: linkData, error: linkError } =
+    await adminClient.auth.admin.generateLink({
+      type: "invite",
+      email,
+      options: { data: metadata, redirectTo },
+    });
+
+  if (!linkError && linkData.user && linkData.properties?.action_link) {
+    return {
+      authUser: linkData.user,
+      delivery: "manual_link",
+      invitationLink: linkData.properties.action_link,
+      warning: inviteError?.message,
+    };
+  }
+
+  // An email failure can occur after Auth has created the user. Recover that
+  // partial state and issue a password-setup link instead of stranding the row.
+  const { data: existingProfile } = await adminClient
+    .from("profiles")
+    .select("id")
+    .eq("email", email)
+    .maybeSingle();
+
+  if (existingProfile?.id) {
+    const { data: existingUserData, error: existingUserError } =
+      await adminClient.auth.admin.getUserById(existingProfile.id);
+    if (!existingUserError && existingUserData.user) {
+      const recoveryLink = await createRecoveryLink(adminClient, email, redirectTo);
+      return {
+        authUser: existingUserData.user,
+        delivery: "manual_link",
+        invitationLink: recoveryLink,
+        warning: inviteError?.message ?? linkError?.message,
+      };
+    }
+  }
+
+  throw new Error(
+    linkError?.message ?? inviteError?.message ?? "Could not create the invitation.",
+  );
+}
+
+async function createRecoveryLink(
+  adminClient: ReturnType<typeof createClient>,
+  email: string,
+  redirectTo: string,
+) {
+  const { data, error } = await adminClient.auth.admin.generateLink({
+    type: "recovery",
+    email,
+    options: { redirectTo },
+  });
+
+  if (error || !data.properties?.action_link) {
+    throw new Error(error?.message ?? "Could not create a password setup link.");
+  }
+
+  return data.properties.action_link;
 }
 
 Deno.serve(async (request) => {
@@ -141,7 +232,9 @@ Deno.serve(async (request) => {
   }
 
   let authUser = null;
-  let invitationSent = false;
+  let delivery: InvitationResult["delivery"] = "email";
+  let invitationLink: string | undefined;
+  let deliveryWarning: string | undefined;
 
   if (existingProfile) {
     const { data: existingUserData, error: existingUserError } =
@@ -153,21 +246,24 @@ Deno.serve(async (request) => {
   }
 
   if (!authUser) {
-    const { data: inviteData, error: inviteError } =
-      await adminClient.auth.admin.inviteUserByEmail(application.email, {
-        data: {
-          full_name: application.contact_full_name,
-          membership_application_id: application.id,
-        },
+    try {
+      const invitation = await createInvitation(
+        adminClient,
+        application.email,
+        application.contact_full_name,
+        application.id,
         redirectTo,
-      });
-
-    if (inviteError || !inviteData.user) {
-      return response(origin, { error: inviteError?.message ?? "Could not create the invitation." }, 400);
+      );
+      authUser = invitation.authUser;
+      delivery = invitation.delivery;
+      invitationLink = invitation.invitationLink;
+      deliveryWarning = invitation.warning;
+    } catch (error) {
+      return response(origin, {
+        error: "The application could not be approved because access setup failed.",
+        details: error instanceof Error ? error.message : "Unknown access setup error.",
+      }, 400);
     }
-
-    authUser = inviteData.user;
-    invitationSent = true;
   }
 
   const joinedAt = new Date();
@@ -251,22 +347,35 @@ Deno.serve(async (request) => {
 
   if (updateError) return response(origin, { error: updateError.message }, 400);
 
-  if (!invitationSent) {
+  if (existingProfile) {
     const { error: resetError } = await adminClient.auth.resetPasswordForEmail(
       application.email,
       { redirectTo },
     );
     if (resetError) {
-      return response(origin, {
-        message: "Application approved, but the access email could not be resent.",
-        warning: resetError.message,
-      });
+      try {
+        invitationLink = await createRecoveryLink(
+          adminClient,
+          application.email,
+          redirectTo,
+        );
+        delivery = "manual_link";
+        deliveryWarning = resetError.message;
+      } catch (error) {
+        deliveryWarning = error instanceof Error ? error.message : resetError.message;
+      }
     }
   }
 
   return response(origin, {
-    message: invitationSent
-      ? "Application approved and the portal invitation was emailed."
-      : "Application approved and a password setup email was sent.",
+    message:
+      delivery === "email"
+        ? existingProfile
+          ? "Application approved and a password setup email was sent."
+          : "Application approved and the portal invitation was emailed."
+        : "Application approved. Email delivery was unavailable, so a secure invitation link was created.",
+    delivery,
+    invitationLink,
+    warning: deliveryWarning,
   });
 });

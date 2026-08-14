@@ -105,6 +105,10 @@ test("keeps APEC branding and removes starter preview code", async () => {
   assert.match(portal, /missing_elder_cases/);
   assert.match(portal, /compliance_officer/);
   assert.match(portal, /review-membership-application/);
+  assert.match(portal, /Edit Application/);
+  assert.match(portal, /Secure invitation link/);
+  assert.match(portal, /FunctionsHttpError/);
+  assert.match(portal, /handleMembershipApplicationUpdate/);
   assert.match(application, /membership_applications/);
   assert.match(migration, /Public can submit membership applications/);
   assert.match(migration, /private\.can_review_membership/);

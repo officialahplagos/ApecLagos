@@ -2,7 +2,7 @@
 
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import type { AuthError, User } from "@supabase/supabase-js";
+import { FunctionsHttpError, type AuthError, type User } from "@supabase/supabase-js";
 import {
   createBrowserSupabaseClient,
   hasSupabaseConfig,
@@ -18,6 +18,11 @@ import {
 type Notice = {
   tone: "info" | "success" | "error";
   text: string;
+};
+
+type ManualInvitation = {
+  email: string;
+  link: string;
 };
 
 const roleLabels: Record<Profile["role"], string> = {
@@ -142,6 +147,9 @@ export function PortalApp() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [passwordSetup, setPasswordSetup] = useState(false);
+  const [editingApplicationId, setEditingApplicationId] = useState<string | null>(null);
+  const [membershipActionId, setMembershipActionId] = useState<string | null>(null);
+  const [manualInvitation, setManualInvitation] = useState<ManualInvitation | null>(null);
 
   const isStaff =
     profile?.role === "super_admin" ||
@@ -527,8 +535,16 @@ export function PortalApp() {
   ) {
     if (!supabase) return;
 
-    setLoading(true);
+    setMembershipActionId(application.id);
     setNotice(null);
+    setManualInvitation(null);
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      setMembershipActionId(null);
+      setNotice({ tone: "error", text: "Your staff session has expired. Sign in again and retry." });
+      return;
+    }
 
     const { data, error } = await supabase.functions.invoke(
       "review-membership-application",
@@ -538,22 +554,92 @@ export function PortalApp() {
           decision,
           notes,
         },
+        headers: {
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+        },
       },
     );
 
-    setLoading(false);
+    setMembershipActionId(null);
 
     if (error) {
-      setNotice({ tone: "error", text: data?.error ?? error.message });
+      let message = data?.error ?? error.message;
+      if (error instanceof FunctionsHttpError) {
+        try {
+          const errorBody = await error.context.json();
+          message = [errorBody?.error, errorBody?.details].filter(Boolean).join(" ") || message;
+        } catch {
+          // Keep the function client's fallback message when no JSON body is available.
+        }
+      }
+      setNotice({ tone: "error", text: message });
       return;
     }
 
     await refreshPrivateData();
     await refreshStaffData();
     setNotice({
-      tone: "success",
+      tone: data?.warning ? "info" : "success",
       text: data?.message ?? `Application ${decision === "approve" ? "approved" : "rejected"}.`,
     });
+    if (data?.invitationLink) {
+      setManualInvitation({ email: application.email, link: data.invitationLink });
+    }
+  }
+
+  async function handleMembershipApplicationUpdate(
+    event: FormEvent<HTMLFormElement>,
+    application: MembershipApplication,
+  ) {
+    event.preventDefault();
+    if (!supabase) return;
+
+    const formData = new FormData(event.currentTarget);
+    const yearText = String(formData.get("yearEstablished") ?? "").trim();
+    const yearEstablished = yearText ? Number(yearText) : null;
+
+    setMembershipActionId(application.id);
+    setNotice(null);
+
+    const { error } = await supabase
+      .from("membership_applications")
+      .update({
+        organization_name: String(formData.get("organizationName") ?? "").trim(),
+        contact_full_name: String(formData.get("contactFullName") ?? "").trim(),
+        position_title: cleanOptional(formData.get("positionTitle")),
+        email: String(formData.get("email") ?? "").trim().toLowerCase(),
+        phone: String(formData.get("phone") ?? "").trim(),
+        lga: cleanOptional(formData.get("lga")),
+        address: cleanOptional(formData.get("address")),
+        registration_number: cleanOptional(formData.get("registrationNumber")),
+        year_established: Number.isFinite(yearEstablished) ? yearEstablished : null,
+        services_offered: cleanOptional(formData.get("servicesOffered")),
+        status: "under_review",
+      })
+      .eq("id", application.id)
+      .in("status", ["pending", "under_review"]);
+
+    setMembershipActionId(null);
+
+    if (error) {
+      setNotice({ tone: "error", text: error.message });
+      return;
+    }
+
+    setEditingApplicationId(null);
+    await refreshStaffData();
+    setNotice({ tone: "success", text: "Application changes saved for compliance review." });
+  }
+
+  async function copyInvitationLink() {
+    if (!manualInvitation) return;
+
+    try {
+      await navigator.clipboard.writeText(manualInvitation.link);
+      setNotice({ tone: "success", text: "Secure invitation link copied. Share it only with the approved applicant." });
+    } catch {
+      setNotice({ tone: "error", text: "The link could not be copied automatically. Select and copy it below." });
+    }
   }
 
   async function handleCaseStatus(
@@ -714,7 +800,17 @@ export function PortalApp() {
         </div>
       </section>
 
-      {notice ? <div className={`portal-notice ${notice.tone}`}>{notice.text}</div> : null}
+      {notice ? <div className={`portal-notice ${notice.tone}`} role="status">{notice.text}</div> : null}
+      {manualInvitation ? (
+        <section className="manual-invitation" aria-label="Secure invitation link">
+          <div>
+            <b>Manual invitation for {manualInvitation.email}</b>
+            <span>This single-use access link is sensitive. Share it only with the approved applicant.</span>
+          </div>
+          <input aria-label="Secure invitation link" value={manualInvitation.link} readOnly />
+          <button type="button" onClick={copyInvitationLink}>Copy Link</button>
+        </section>
+      ) : null}
 
       {!configured ? (
         <section className="portal-card">
@@ -809,11 +905,16 @@ export function PortalApp() {
                 </div>
                 <div className="portal-list">
                   {membershipApplications.length ? (
-                    membershipApplications.map((application) => (
-                      <form
+                    membershipApplications.map((application) => {
+                      const isEditing = editingApplicationId === application.id;
+                      const isWorking = membershipActionId === application.id;
+                      return <form
                         className="portal-row-card membership-review-card"
                         key={application.id}
-                        onSubmit={(event) => event.preventDefault()}
+                        onSubmit={(event) => {
+                          if (isEditing) void handleMembershipApplicationUpdate(event, application);
+                          else event.preventDefault();
+                        }}
                       >
                         <div className="membership-review-head">
                           <span>
@@ -822,7 +923,20 @@ export function PortalApp() {
                           </span>
                           <span className="review-status">{application.status.replace("_", " ")}</span>
                         </div>
-                        <dl className="membership-review-details">
+                        {isEditing ? (
+                          <div className="membership-edit-fields">
+                            <label>Organisation name<input name="organizationName" defaultValue={application.organization_name} required minLength={2} /></label>
+                            <label>Contact name<input name="contactFullName" defaultValue={application.contact_full_name} required minLength={2} /></label>
+                            <label>Position<input name="positionTitle" defaultValue={application.position_title ?? ""} /></label>
+                            <label>Email<input name="email" type="email" defaultValue={application.email} required /></label>
+                            <label>Phone<input name="phone" type="tel" defaultValue={application.phone} required minLength={7} /></label>
+                            <label>LGA<input name="lga" defaultValue={application.lga ?? ""} /></label>
+                            <label>Registration number<input name="registrationNumber" defaultValue={application.registration_number ?? ""} /></label>
+                            <label>Year established<input name="yearEstablished" type="number" min="1900" max="2100" defaultValue={application.year_established ?? ""} /></label>
+                            <label className="span-2">Address<textarea name="address" defaultValue={application.address ?? ""} /></label>
+                            <label className="span-2">Services offered<textarea name="servicesOffered" defaultValue={application.services_offered ?? ""} /></label>
+                          </div>
+                        ) : <><dl className="membership-review-details">
                           <div><dt>Contact</dt><dd>{application.contact_full_name}</dd></div>
                           <div><dt>Position</dt><dd>{application.position_title || "Not supplied"}</dd></div>
                           <div><dt>Email</dt><dd><a href={`mailto:${application.email}`}>{application.email}</a></dd></div>
@@ -831,13 +945,18 @@ export function PortalApp() {
                           <div><dt>Registration</dt><dd>{application.registration_number || "Not supplied"}</dd></div>
                         </dl>
                         {application.address ? <p><b>Address:</b> {application.address}</p> : null}
-                        {application.services_offered ? <p><b>Services:</b> {application.services_offered}</p> : null}
-                        <label className="review-notes">
+                        {application.services_offered ? <p><b>Services:</b> {application.services_offered}</p> : null}</>}
+                        {!isEditing ? <label className="review-notes">
                           Review notes
                           <textarea name="reviewNotes" placeholder="Optional internal compliance note" />
-                        </label>
+                        </label> : null}
                         <div className="portal-actions membership-review-actions">
-                          <button
+                          {isEditing ? <>
+                            <button type="submit" disabled={isWorking}>{isWorking ? "Saving..." : "Save Changes"}</button>
+                            <button className="portal-secondary-button" type="button" onClick={() => setEditingApplicationId(null)} disabled={isWorking}>Cancel</button>
+                          </> : <>
+                            <button className="portal-secondary-button" type="button" onClick={() => setEditingApplicationId(application.id)} disabled={Boolean(membershipActionId)}>Edit Application</button>
+                            <button
                             type="button"
                             onClick={(event) => {
                               const form = event.currentTarget.closest("form");
@@ -846,9 +965,9 @@ export function PortalApp() {
                                 : "";
                               void handleMembershipReview(application, "approve", notes);
                             }}
-                            disabled={loading}
+                            disabled={Boolean(membershipActionId)}
                           >
-                            Approve &amp; Send Invitation
+                            {isWorking ? "Approving..." : "Approve & Send Invitation"}
                           </button>
                           <button
                             className="danger-button"
@@ -860,13 +979,13 @@ export function PortalApp() {
                                 : "";
                               void handleMembershipReview(application, "reject", notes);
                             }}
-                            disabled={loading}
+                            disabled={Boolean(membershipActionId)}
                           >
-                            Reject
-                          </button>
+                            {isWorking ? "Working..." : "Reject"}
+                          </button></>}
                         </div>
                       </form>
-                    ))
+                    })
                   ) : (
                     <p>No member applications are waiting for review.</p>
                   )}

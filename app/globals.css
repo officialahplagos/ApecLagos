@@ -1215,6 +1215,10 @@ td small {
   padding: clamp(42px, 7vw, 86px);
 }
 
+.portal-hero > * {
+  min-width: 0;
+}
+
 .portal-hero h1 {
   font-size: clamp(2.6rem, 5.5vw, 5.4rem);
   max-width: 820px;
@@ -1239,6 +1243,7 @@ td small {
 .portal-status-panel span {
   color: rgba(255, 255, 255, 0.74);
   line-height: 1.55;
+  overflow-wrap: anywhere;
 }
 
 .portal-notice {
@@ -1261,6 +1266,43 @@ td small {
 .portal-notice.error {
   background: #f8e7e3;
   color: #8f483d;
+}
+
+.manual-invitation {
+  align-items: end;
+  background: #fff8e7;
+  border: 1px solid #e8ca82;
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(280px, 1.4fr) auto;
+  margin-top: 12px;
+  padding: 16px;
+}
+
+.manual-invitation div {
+  display: grid;
+  gap: 4px;
+}
+
+.manual-invitation span {
+  color: #655735;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.manual-invitation input {
+  min-width: 0;
+}
+
+.manual-invitation button {
+  background: var(--ink);
+  border: 0;
+  border-radius: 7px;
+  color: var(--white);
+  cursor: pointer;
+  min-height: 44px;
+  padding: 10px 16px;
 }
 
 .auth-layout,
@@ -1565,6 +1607,28 @@ select {
 .membership-review-details {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   margin: 0;
+}
+
+.membership-edit-fields {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.membership-edit-fields label {
+  color: #455a58;
+  display: grid;
+  font-size: 0.86rem;
+  font-weight: 750;
+  gap: 7px;
+}
+
+.membership-edit-fields .span-2 {
+  grid-column: 1 / -1;
+}
+
+.membership-edit-fields textarea {
+  min-height: 88px;
 }
 
 .membership-review-details a {
@@ -1879,7 +1943,7 @@ footer img {
   .auth-layout,
   .portal-grid-layout,
   .application-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .portal-header nav {
@@ -1973,7 +2037,17 @@ footer img {
   .portal-table-row,
   .portal-details,
   .membership-review-details,
+  .membership-edit-fields,
   .application-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .membership-edit-fields .span-2 {
+    grid-column: auto;
+  }
+
+  .manual-invitation {
+    align-items: stretch;
     grid-template-columns: 1fr;
   }
 
