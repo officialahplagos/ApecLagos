@@ -265,21 +265,6 @@ export function PortalApp() {
   }, [isStaff, supabase]);
 
   useEffect(() => {
-    const query = new URLSearchParams(window.location.search);
-    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-    const authType = hash.get("type");
-
-    if (
-      query.get("invited") === "1" ||
-      authType === "invite" ||
-      authType === "recovery"
-    ) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setPasswordSetup(true);
-    }
-  }, []);
-
-  useEffect(() => {
     if (!supabase) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setBooting(false);
@@ -289,16 +274,85 @@ export function PortalApp() {
     let active = true;
 
     const loadSession = async () => {
-      const { data } = await supabase.auth.getSession();
+      const query = new URLSearchParams(window.location.search);
+      const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      const authType = hash.get("type") ?? query.get("type");
+      const callbackRequested =
+        query.get("invited") === "1" ||
+        query.get("password_setup") === "1" ||
+        authType === "invite" ||
+        authType === "recovery";
+      const callbackError =
+        hash.get("error_description") ??
+        query.get("error_description") ??
+        hash.get("error") ??
+        query.get("error");
+
+      if (callbackError) {
+        if (!active) return;
+        setUser(null);
+        setPasswordSetup(false);
+        setNotice({
+          tone: "error",
+          text: `${callbackError.replace(/\+/g, " ")} Request a new password setup email below.`,
+        });
+        setBooting(false);
+        window.history.replaceState({}, "", "/portal");
+        return;
+      }
+
+      let { data, error } = await supabase.auth.getSession();
+
+      if (!data.session && query.get("code")) {
+        const exchangeResult = await supabase.auth.exchangeCodeForSession(
+          query.get("code") as string,
+        );
+        data = exchangeResult.data;
+        error = exchangeResult.error;
+      }
+
+      const accessToken = hash.get("access_token");
+      const refreshToken = hash.get("refresh_token");
+      if (!data.session && accessToken && refreshToken) {
+        const sessionResult = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+        data = sessionResult.data;
+        error = sessionResult.error;
+      }
+
       if (!active) return;
+
+      if (error) {
+        setNotice({
+          tone: "error",
+          text: `${error.message} Request a new password setup email below.`,
+        });
+      }
+
       setUser(data.session?.user ?? null);
+      if (callbackRequested) {
+        if (data.session) {
+          setPasswordSetup(true);
+          window.history.replaceState({}, "", "/portal?password_setup=1");
+        } else {
+          setPasswordSetup(false);
+          setNotice({
+            tone: "error",
+            text: "This invitation link is invalid or has expired. Request a new password setup email below.",
+          });
+          window.history.replaceState({}, "", "/portal");
+        }
+      }
       setBooting(false);
     };
 
     void loadSession();
 
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
+      if (event === "PASSWORD_RECOVERY") setPasswordSetup(true);
     });
 
     return () => {
@@ -351,6 +405,27 @@ export function PortalApp() {
     setNotice({
       tone: "success",
       text: "Signed in successfully.",
+    });
+  }
+
+  async function handlePasswordSetupEmail(email: string) {
+    if (!supabase) return;
+
+    setLoading(true);
+    setNotice(null);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/portal?password_setup=1`,
+    });
+    setLoading(false);
+
+    if (error) {
+      setNotice({ tone: "error", text: error.message });
+      return;
+    }
+
+    setNotice({
+      tone: "success",
+      text: "Password setup email sent. Open the newest email and use its link once.",
     });
   }
 
@@ -1323,6 +1398,18 @@ export function PortalApp() {
             </label>
             <button type="submit" disabled={loading}>
               {loading ? "Please wait" : "Sign In"}
+            </button>
+            <button
+              className="portal-secondary-button"
+              type="button"
+              disabled={loading}
+              onClick={(event) => {
+                const emailInput = event.currentTarget.form?.elements.namedItem("email");
+                if (!(emailInput instanceof HTMLInputElement) || !emailInput.reportValidity()) return;
+                void handlePasswordSetupEmail(emailInput.value.trim().toLowerCase());
+              }}
+            >
+              Send Password Setup Email
             </button>
             <p className="auth-application-link">
               Need portal access? <Link href="/apply">Apply for membership</Link>
