@@ -1,4 +1,5 @@
 import { MobileMenu } from "./components/MobileMenu";
+import { PolicyResources } from "./components/PolicyResources";
 import { PublicMissingElderRegistry } from "./components/PublicMissingElderRegistry";
 
 const vettingSteps = [
@@ -128,10 +129,11 @@ export default function Home() {
           <a href="#missing-elders">Missing Elders</a>
           <a href="#caregiver-register">Caregiver Register</a>
           <a href="#vetting">Vetting</a>
+          <a href="#resources">Resources</a>
           <a href="/apply">Apply for Membership</a>
         </nav>
-        <a className="header-action" href="/apply">
-          Apply Now
+        <a className="header-action" href="/portal">
+          Login
         </a>
         <MobileMenu />
       </header>
@@ -284,6 +286,18 @@ export default function Home() {
             </div>
           ))}
         </div>
+      </section>
+
+      <section className="workspace-band resources" id="resources">
+        <div className="section-heading">
+          <span>APEC resource library</span>
+          <h2>Policies and Guidance</h2>
+          <p>
+            Access official APEC Lagos policies and operational guidance
+            published by authorised association administrators.
+          </p>
+        </div>
+        <PolicyResources />
       </section>
 
       <section className="workspace-band membership" id="membership">

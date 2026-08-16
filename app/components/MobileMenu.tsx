@@ -6,6 +6,7 @@ const links = [
   { href: "#missing-elders", label: "Missing Elders" },
   { href: "#caregiver-register", label: "Caregiver Register" },
   { href: "#vetting", label: "Vetting" },
+  { href: "#resources", label: "Resources" },
   { href: "/apply", label: "Apply for Membership" },
 ];
 

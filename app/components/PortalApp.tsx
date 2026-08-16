@@ -2,6 +2,7 @@
 
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { Eye, EyeOff, FileText, Megaphone, Trash2, Upload } from "lucide-react";
 import { FunctionsHttpError, type AuthError, type User } from "@supabase/supabase-js";
 import {
   createBrowserSupabaseClient,
@@ -13,6 +14,7 @@ import {
   type MembershipApplication,
   type MissingElderCase,
   type Profile,
+  type ResourceDocument,
 } from "../../lib/supabase/client";
 
 type Notice = {
@@ -24,6 +26,43 @@ type ManualInvitation = {
   email: string;
   link: string;
 };
+
+type PasswordFieldProps = {
+  id: string;
+  label: string;
+  name: string;
+  minLength: number;
+  autoComplete: string;
+};
+
+function PasswordField({ id, label, name, minLength, autoComplete }: PasswordFieldProps) {
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <label htmlFor={id}>
+      {label}
+      <span className="password-input-wrap">
+        <input
+          id={id}
+          name={name}
+          type={visible ? "text" : "password"}
+          required
+          minLength={minLength}
+          autoComplete={autoComplete}
+        />
+        <button
+          className="password-visibility-button"
+          type="button"
+          aria-label={visible ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
+          aria-pressed={visible}
+          onClick={() => setVisible((current) => !current)}
+        >
+          {visible ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+        </button>
+      </span>
+    </label>
+  );
+}
 
 const roleLabels: Record<Profile["role"], string> = {
   super_admin: "Super Admin",
@@ -99,6 +138,7 @@ export function PortalApp() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [organizations, setOrganizations] = useState<MemberOrganization[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [policyResources, setPolicyResources] = useState<ResourceDocument[]>([]);
   const [missingCases, setMissingCases] = useState<MissingElderCase[]>([]);
   const [membershipApplications, setMembershipApplications] = useState<
     MembershipApplication[]
@@ -131,7 +171,7 @@ export function PortalApp() {
   const refreshPublicData = useCallback(async () => {
     if (!supabase) return;
 
-    const [announcementsResult, missingResult] = await Promise.all([
+    const [announcementsResult, missingResult, resourcesResult] = await Promise.all([
       supabase
         .from("announcements")
         .select("id,title,body,target_audience,is_pinned,is_urgent,publish_at")
@@ -144,6 +184,13 @@ export function PortalApp() {
         )
         .order("published_at", { ascending: false })
         .limit(6),
+      supabase
+        .from("documents")
+        .select("id,title,summary,document_type,storage_bucket,storage_path,access_level,created_at")
+        .eq("document_type", "policy")
+        .eq("access_level", "public")
+        .order("created_at", { ascending: false })
+        .limit(30),
     ]);
 
     if (!announcementsResult.error) {
@@ -152,6 +199,10 @@ export function PortalApp() {
 
     if (!missingResult.error) {
       setMissingCases((missingResult.data ?? []) as MissingElderCase[]);
+    }
+
+    if (!resourcesResult.error) {
+      setPolicyResources((resourcesResult.data ?? []) as ResourceDocument[]);
     }
   }, [supabase]);
 
@@ -465,13 +516,25 @@ export function PortalApp() {
     setNotice({ tone: "info", text: "Signed out." });
   }
 
-  async function handleClaimFirstAdmin() {
-    if (!supabase) return;
+  async function handleAnnouncement(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!supabase || !user || !isAdmin) return;
 
+    const formData = new FormData(event.currentTarget);
+    const expiresAt = cleanOptional(formData.get("expiresAt"));
     setLoading(true);
     setNotice(null);
 
-    const { error } = await supabase.rpc("claim_first_admin");
+    const { error } = await supabase.from("announcements").insert({
+      title: String(formData.get("title") ?? "").trim(),
+      body: String(formData.get("body") ?? "").trim(),
+      target_audience: String(formData.get("targetAudience") ?? "members"),
+      is_pinned: formData.get("isPinned") === "on",
+      is_urgent: formData.get("isUrgent") === "on",
+      publish_at: new Date().toISOString(),
+      expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
+      created_by: user.id,
+    });
 
     setLoading(false);
 
@@ -480,11 +543,102 @@ export function PortalApp() {
       return;
     }
 
-    await refreshPrivateData();
-    setNotice({
-      tone: "success",
-      text: "First admin account activated for this Supabase project.",
+    event.currentTarget.reset();
+    await refreshPublicData();
+    setNotice({ tone: "success", text: "Announcement published." });
+  }
+
+  async function handlePolicyUpload(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!supabase || !user || !isAdmin) return;
+
+    const formData = new FormData(event.currentTarget);
+    const file = formData.get("policyFile");
+    if (!(file instanceof File) || file.size === 0) {
+      setNotice({ tone: "error", text: "Select a PDF or Word policy document." });
+      return;
+    }
+
+    const extension = file.name.split(".").pop()?.toLowerCase();
+    if (!extension || !["pdf", "docx"].includes(extension)) {
+      setNotice({ tone: "error", text: "Policy documents must be PDF or DOCX files." });
+      return;
+    }
+
+    const safeFileName = file.name
+      .replace(/[^a-zA-Z0-9._-]+/g, "-")
+      .replace(/^-+|-+$/g, "") || `policy.${extension}`;
+    const storagePath = `policies/${Date.now()}-${crypto.randomUUID()}-${safeFileName}`;
+    const contentType = extension === "pdf"
+      ? "application/pdf"
+      : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    setLoading(true);
+    setNotice(null);
+
+    const { error: uploadError } = await supabase.storage
+      .from("apec-public-resources")
+      .upload(storagePath, file, { contentType, upsert: false });
+
+    if (uploadError) {
+      setLoading(false);
+      setNotice({ tone: "error", text: uploadError.message });
+      return;
+    }
+
+    const { error: documentError } = await supabase.from("documents").insert({
+      title: String(formData.get("policyTitle") ?? "").trim(),
+      summary: cleanOptional(formData.get("policySummary")),
+      document_type: "policy",
+      storage_bucket: "apec-public-resources",
+      storage_path: storagePath,
+      access_level: "public",
+      uploaded_by: user.id,
     });
+
+    if (documentError) {
+      await supabase.storage.from("apec-public-resources").remove([storagePath]);
+      setLoading(false);
+      setNotice({ tone: "error", text: documentError.message });
+      return;
+    }
+
+    setLoading(false);
+    event.currentTarget.reset();
+    await refreshPublicData();
+    setNotice({ tone: "success", text: "Policy published in the Resources section." });
+  }
+
+  async function handlePolicyDelete(resource: ResourceDocument) {
+    if (!supabase || !isAdmin) return;
+    if (!window.confirm(`Remove ${resource.title} from public Resources?`)) return;
+
+    setLoading(true);
+    setNotice(null);
+    const { error: documentError } = await supabase
+      .from("documents")
+      .delete()
+      .eq("id", resource.id);
+
+    if (documentError) {
+      setLoading(false);
+      setNotice({ tone: "error", text: documentError.message });
+      return;
+    }
+
+    const { error: storageError } = await supabase.storage
+      .from(resource.storage_bucket)
+      .remove([resource.storage_path]);
+    setLoading(false);
+
+    if (storageError) {
+      setNotice({
+        tone: "info",
+        text: "The policy was unpublished, but its stored file still needs administrator cleanup.",
+      });
+    } else {
+      setNotice({ tone: "success", text: "Policy removed from public Resources." });
+    }
+    await refreshPublicData();
   }
 
   async function handleMissingElder(event: FormEvent<HTMLFormElement>) {
@@ -882,14 +1036,8 @@ export function PortalApp() {
               <h2>Set your portal password</h2>
               <p>Choose a private password for future APEC Lagos portal access.</p>
               <form className="portal-form" onSubmit={handlePasswordSetup}>
-                <label>
-                  New password
-                  <input name="password" type="password" required minLength={8} autoComplete="new-password" />
-                </label>
-                <label>
-                  Confirm password
-                  <input name="confirmation" type="password" required minLength={8} autoComplete="new-password" />
-                </label>
+                <PasswordField id="new-password" label="New password" name="password" minLength={8} autoComplete="new-password" />
+                <PasswordField id="confirm-password" label="Confirm password" name="confirmation" minLength={8} autoComplete="new-password" />
                 <button type="submit" disabled={loading}>
                   {loading ? "Saving password..." : "Set Password"}
                 </button>
@@ -925,21 +1073,114 @@ export function PortalApp() {
                   ? "Review applications, publish missing elder alerts, maintain caregiver references, and manage user access."
                   : "Track your membership status, applications, announcements, and safeguarding submissions."}
               </p>
-              {!isStaff ? (
-                <button
-                  className="portal-secondary-button"
-                  type="button"
-                  onClick={handleClaimFirstAdmin}
-                  disabled={loading}
-                >
-                  Claim First Admin
-                </button>
-              ) : null}
             </article>
           </section>
 
           {isStaff ? (
             <section className="portal-admin-stack" aria-label="Admin workflows">
+              {isAdmin ? <>
+                <section className="portal-card" id="announcement-publisher">
+                  <div className="portal-section-head">
+                    <div>
+                      <span className="portal-kicker">Member communications</span>
+                      <h2><Megaphone aria-hidden="true" /> Publish Announcement</h2>
+                    </div>
+                  </div>
+                  <form className="portal-form" onSubmit={handleAnnouncement}>
+                    <label>
+                      Announcement title
+                      <input name="title" required minLength={3} maxLength={160} />
+                    </label>
+                    <label>
+                      Audience
+                      <select name="targetAudience" defaultValue="members">
+                        <option value="public">Public website</option>
+                        <option value="members">All members</option>
+                        <option value="admins">Administrators</option>
+                        <option value="committee">Committee</option>
+                      </select>
+                    </label>
+                    <label className="span-2">
+                      Message
+                      <textarea name="body" required minLength={5} rows={5} />
+                    </label>
+                    <label>
+                      Expiry date and time
+                      <input name="expiresAt" type="datetime-local" />
+                    </label>
+                    <span className="announcement-options">
+                      <label className="portal-check">
+                        <input name="isPinned" type="checkbox" />
+                        Pin announcement
+                      </label>
+                      <label className="portal-check">
+                        <input name="isUrgent" type="checkbox" />
+                        Mark urgent
+                      </label>
+                    </span>
+                    <button type="submit" disabled={loading}>
+                      <Megaphone aria-hidden="true" />
+                      {loading ? "Publishing..." : "Publish Announcement"}
+                    </button>
+                  </form>
+                </section>
+
+                <section className="portal-card" id="policy-resource-manager">
+                  <div className="portal-section-head">
+                    <div>
+                      <span className="portal-kicker">Public resources</span>
+                      <h2><FileText aria-hidden="true" /> APEC Policy Library</h2>
+                    </div>
+                    <span>{policyResources.length} published</span>
+                  </div>
+                  <form className="portal-form" onSubmit={handlePolicyUpload}>
+                    <label>
+                      Policy title
+                      <input name="policyTitle" required minLength={3} maxLength={180} />
+                    </label>
+                    <label>
+                      Policy document
+                      <input name="policyFile" type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required />
+                    </label>
+                    <label className="span-2">
+                      Short summary
+                      <textarea name="policySummary" maxLength={500} rows={3} />
+                    </label>
+                    <button type="submit" disabled={loading}>
+                      <Upload aria-hidden="true" />
+                      {loading ? "Uploading..." : "Publish Policy"}
+                    </button>
+                  </form>
+                  <div className="resource-admin-list">
+                    {policyResources.length ? policyResources.map((resource) => {
+                      const publicUrl = supabase?.storage
+                        .from(resource.storage_bucket)
+                        .getPublicUrl(resource.storage_path).data.publicUrl;
+                      return (
+                        <div className="resource-admin-row" key={resource.id}>
+                          <FileText aria-hidden="true" />
+                          <span>
+                            <b>{resource.title}</b>
+                            {resource.summary ? <small>{resource.summary}</small> : null}
+                          </span>
+                          <a href={publicUrl} target="_blank" rel="noreferrer">View</a>
+                          <button
+                            className="icon-action-button danger-icon-button"
+                            type="button"
+                            title={`Remove ${resource.title}`}
+                            aria-label={`Remove ${resource.title}`}
+                            disabled={loading}
+                            onClick={() => void handlePolicyDelete(resource)}
+                          >
+                            <Trash2 aria-hidden="true" />
+                          </button>
+                        </div>
+                      );
+                    }) : <p>No policy documents have been published.</p>}
+                  </div>
+                </section>
+              </> : null}
+
               {canReviewMembership ? <section className="portal-card">
                 <div className="portal-section-head">
                   <div>
@@ -1392,10 +1633,7 @@ export function PortalApp() {
               Email
               <input name="email" type="email" required placeholder="you@example.com" />
             </label>
-            <label>
-              Password
-              <input name="password" type="password" required minLength={6} />
-            </label>
+            <PasswordField id="sign-in-password" label="Password" name="password" minLength={6} autoComplete="current-password" />
             <button type="submit" disabled={loading}>
               {loading ? "Please wait" : "Sign In"}
             </button>

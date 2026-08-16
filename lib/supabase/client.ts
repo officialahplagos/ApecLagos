@@ -64,6 +64,17 @@ export type Announcement = {
   publish_at: string;
 };
 
+export type ResourceDocument = {
+  id: string;
+  title: string;
+  summary: string | null;
+  document_type: string;
+  storage_bucket: string;
+  storage_path: string;
+  access_level: "public" | "members" | "admin" | "restricted";
+  created_at: string;
+};
+
 export type MissingElderCase = {
   id: string;
   public_reference: string;

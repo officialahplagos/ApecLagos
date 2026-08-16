@@ -41,6 +41,9 @@ test("server-renders the APEC Lagos platform shell", async () => {
   assert.match(html, /Submit for Officer Review/);
   assert.match(html, /Caregiver Reference and Safeguarding Register/);
   assert.match(html, /Caregiver Vetting Workflow/);
+  assert.match(html, /Policies and Guidance/);
+  assert.match(html, />Login</);
+  assert.doesNotMatch(html, /Apply Now/);
   assert.match(html, /href="\/apply"/);
   assert.match(html, /href="\/portal"/);
   assert.doesNotMatch(
@@ -76,10 +79,11 @@ test("server-renders the public membership application route", async () => {
 });
 
 test("keeps APEC branding and uses production safeguarding workflows", async () => {
-  const [css, page, publicIntake, portal, application, migration, productionMigration, serviceRoleMigration, reviewFunction, layout, packageJson] = await Promise.all([
+  const [css, page, publicIntake, policyResources, portal, application, migration, productionMigration, policyMigration, serviceRoleMigration, reviewFunction, layout, packageJson] = await Promise.all([
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/PublicMissingElderRegistry.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/PolicyResources.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/PortalApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/MembershipApplicationForm.tsx", import.meta.url), "utf8"),
     readFile(
@@ -92,6 +96,13 @@ test("keeps APEC branding and uses production safeguarding workflows", async () 
     readFile(
       new URL(
         "../supabase/migrations/20260814150000_public_missing_elder_intake_and_application_edits.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+    readFile(
+      new URL(
+        "../supabase/migrations/20260816090000_policy_resources_and_admin_lockdown.sql",
         import.meta.url,
       ),
       "utf8",
@@ -120,11 +131,16 @@ test("keeps APEC branding and uses production safeguarding workflows", async () 
   assert.match(css, /\.mobile-drawer/);
   assert.match(css, /\.footer-icon-strip/);
   assert.match(css, /\.portal-shell/);
+  assert.match(css, /\.resource-grid/);
+  assert.match(css, /\.password-visibility-button/);
   assert.match(page, /PublicMissingElderRegistry/);
+  assert.match(page, /PolicyResources/);
   assert.match(page, /vettingSteps/);
   assert.match(publicIntake, /submit_missing_elder_report/);
   assert.match(publicIntake, /Likely medical conditions/);
   assert.match(publicIntake, /consentConfirmed/);
+  assert.match(policyResources, /apec-public-resources|storage_bucket/);
+  assert.match(policyResources, /No APEC policy documents have been published yet/);
   assert.match(portal, /createBrowserSupabaseClient/);
   assert.match(portal, /member_organizations/);
   assert.match(portal, /missing_elder_cases/);
@@ -144,6 +160,11 @@ test("keeps APEC branding and uses production safeguarding workflows", async () 
   assert.match(portal, /resetPasswordForEmail/);
   assert.match(portal, /Send Password Setup Email/);
   assert.match(portal, /password_setup/);
+  assert.match(portal, /PasswordField/);
+  assert.match(portal, /Publish Announcement/);
+  assert.match(portal, /Publish Policy/);
+  assert.match(portal, /apec-public-resources/);
+  assert.doesNotMatch(portal, /Claim First Admin|handleClaimFirstAdmin/);
   assert.match(portal, /applicationEditDirty/);
   assert.match(portal, /form\.reportValidity\(\)/);
   assert.match(portal, /disabled=\{isWorking \|\| !applicationEditDirty\}/);
@@ -156,10 +177,14 @@ test("keeps APEC branding and uses production safeguarding workflows", async () 
   assert.match(productionMigration, /submit_missing_elder_report/);
   assert.match(productionMigration, /Public can read published missing elder photos/);
   assert.match(productionMigration, /update_membership_application_for_review/);
+  assert.match(policyMigration, /Public can read published policy documents/);
+  assert.match(policyMigration, /apec-public-resources/);
+  assert.match(policyMigration, /revoke all on function public\.claim_first_admin/);
   assert.match(reviewFunction, /2026-08-14-approval-fallback/);
   assert.match(reviewFunction, /generateLink/);
   assert.doesNotMatch(page + css, /footer-photo-strip|module-photo|demo-banner/);
   assert.match(layout, /APEC Lagos \| Elderly Care Provider Platform/);
+  assert.match(packageJson, /lucide-react/);
   assert.doesNotMatch(
     page + portal + layout + packageJson,
     /codex-preview|_sites-preview|react-loading-skeleton|Starter Project|fictional|sample data|demo portal|pilot build/i,
