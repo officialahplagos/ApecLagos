@@ -282,10 +282,12 @@ test("keeps APEC branding and uses production safeguarding workflows", async () 
   assert.match(policyMigration, /Public can read published policy documents/);
   assert.match(policyMigration, /apec-public-resources/);
   assert.match(policyMigration, /revoke all on function public\.claim_first_admin/);
-  assert.match(reviewFunction, /2026-08-14-approval-fallback/);
+  assert.match(reviewFunction, /2026-08-19-custom-domain/);
+  assert.match(reviewFunction, /https:\/\/www\.apeclagos\.org\.ng/);
   assert.match(reviewFunction, /generateLink/);
   assert.doesNotMatch(page + css, /footer-photo-strip|module-photo|demo-banner/);
   assert.match(layout, /APEC Lagos \| Elderly Care Provider Platform/);
+  assert.match(layout, /metadataBase: new URL\("https:\/\/www\.apeclagos\.org\.ng"\)/);
   assert.match(layout, /InstallApp/);
   assert.match(layout, /manifest\.webmanifest/);
   assert.match(packageJson, /lucide-react/);

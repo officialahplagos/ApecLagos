@@ -50,7 +50,9 @@ The hosted function uses Supabase-provided server secrets. Never add
 In Supabase Auth URL Configuration, keep this redirect URL enabled:
 
 ```text
-https://apec-lagos.vercel.app/portal
+https://www.apeclagos.org.ng/**
+https://apeclagos.org.ng/**
+https://apec-lagos.vercel.app/**
 ```
 
 Approved applicants receive an invitation or password setup email. They choose

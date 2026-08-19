@@ -53,7 +53,8 @@ Provider mutations and deployments must pass the repository identity checks in
 - GitHub: `officialahplagos/ApecLagos`
 - Supabase project ref: `twjpsdtovbfetzbbmlaz`
 - Vercel team/project: `officialahplagos-projects/apec-lagos`
-- Production: `https://apec-lagos.vercel.app`
+- Production: `https://www.apeclagos.org.ng`
+- Vercel fallback: `https://apec-lagos.vercel.app`
 
 The production PWA is installed directly from the website. Android and
 Chromium browsers can show a native install prompt; iPhone and iPad users add

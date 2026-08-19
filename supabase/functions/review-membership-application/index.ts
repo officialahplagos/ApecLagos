@@ -15,7 +15,7 @@ type InvitationResult = {
 
 const allowedHeaders =
   "authorization, x-client-info, apikey, content-type";
-const functionVersion = "2026-08-14-approval-fallback";
+const functionVersion = "2026-08-19-custom-domain";
 
 function response(origin: string, body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -32,9 +32,11 @@ function response(origin: string, body: unknown, status = 200) {
 
 function getAllowedOrigin(request: Request) {
   const origin = request.headers.get("origin") ?? "";
-  const productionOrigin = Deno.env.get("APP_URL") ?? "https://apec-lagos.vercel.app";
+  const productionOrigin = Deno.env.get("APP_URL") ?? "https://www.apeclagos.org.ng";
   const allowedOrigins = new Set([
     productionOrigin,
+    "https://www.apeclagos.org.ng",
+    "https://apeclagos.org.ng",
     "https://apec-lagos.vercel.app",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
@@ -222,7 +224,7 @@ Deno.serve(async (request) => {
     return response(origin, { message: "Application rejected." });
   }
 
-  const redirectTo = `${Deno.env.get("APP_URL") ?? "https://apec-lagos.vercel.app"}/portal?invited=1`;
+  const redirectTo = `${Deno.env.get("APP_URL") ?? "https://www.apeclagos.org.ng"}/portal?invited=1`;
   const { data: existingProfile, error: profileLookupError } = await adminClient
     .from("profiles")
     .select("id")
