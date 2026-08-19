@@ -1,0 +1,50 @@
+{
+  "id": "/",
+  "name": "APEC Lagos",
+  "short_name": "APEC Lagos",
+  "description": "Membership, safeguarding, missing elder alerts, and caregiver reference tools for APEC Lagos.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4f8f6",
+  "theme_color": "#0f766e",
+  "prefer_related_applications": false,
+  "categories": ["business", "medical", "social"],
+  "icons": [
+    {
+      "src": "/icons/apec-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/apec-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/apec-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Member Login",
+      "short_name": "Login",
+      "url": "/portal"
+    },
+    {
+      "name": "Report a Missing Elder",
+      "short_name": "Missing Elder",
+      "url": "/#missing-elders"
+    },
+    {
+      "name": "Apply for Membership",
+      "short_name": "Apply",
+      "url": "/apply"
+    }
+  ]
+}

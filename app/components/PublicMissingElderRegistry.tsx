@@ -66,6 +66,7 @@ export function PublicMissingElderRegistry() {
   );
   const [cases, setCases] = useState<MissingElderCase[]>([]);
   const [loadingCases, setLoadingCases] = useState(configured);
+  const [casesError, setCasesError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
 
@@ -83,7 +84,11 @@ export function PublicMissingElderRegistry() {
       .limit(12)
       .then(({ data, error }) => {
         if (!active) return;
-        if (!error) setCases((data ?? []) as MissingElderCase[]);
+        if (error) {
+          setCasesError("Verified alerts could not be loaded. Please refresh and try again.");
+        } else {
+          setCases((data ?? []) as MissingElderCase[]);
+        }
         setLoadingCases(false);
       });
 
@@ -132,7 +137,9 @@ export function PublicMissingElderRegistry() {
           p_approximate_age: ageText ? Number(ageText) : null,
           p_photo_path: photoPath,
           p_last_seen_location: String(formData.get("lastSeenLocation") ?? "").trim(),
-          p_last_seen_at: optionalText(formData, "lastSeenAt"),
+          p_last_seen_at: optionalText(formData, "lastSeenAt")
+            ? new Date(String(formData.get("lastSeenAt"))).toISOString()
+            : null,
           p_public_notes: optionalText(formData, "publicNotes"),
           p_police_reference: optionalText(formData, "policeReference"),
           p_public_contact_phone: String(formData.get("contactPhone") ?? "").trim(),
@@ -152,6 +159,9 @@ export function PublicMissingElderRegistry() {
         text: `Report received for officer review. Keep reference ${String(reference)} for follow-up.`,
       });
     } catch (error) {
+      if (photoPath) {
+        await supabase.storage.from("missing-elder-photos").remove([photoPath]);
+      }
       setNotice({
         tone: "error",
         text: error instanceof Error ? error.message : "The report could not be submitted.",
@@ -165,7 +175,13 @@ export function PublicMissingElderRegistry() {
     <div className="registry-layout public-registry-layout">
       <div className="elder-board" aria-live="polite">
         {loadingCases ? <div className="public-empty-state">Loading verified alerts...</div> : null}
-        {!loadingCases && !cases.length ? (
+        {!loadingCases && casesError ? (
+          <div className="public-empty-state error" role="alert">
+            <h3>Alerts are temporarily unavailable.</h3>
+            <p>{casesError}</p>
+          </div>
+        ) : null}
+        {!loadingCases && !casesError && !cases.length ? (
           <div className="public-empty-state">
             <h3>No verified public alerts are active.</h3>
             <p>New reports appear here only after an authorised officer confirms them for publication.</p>

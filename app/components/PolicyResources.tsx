@@ -16,6 +16,7 @@ export function PolicyResources() {
   );
   const [resources, setResources] = useState<ResourceDocument[]>([]);
   const [loading, setLoading] = useState(configured);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadResources = useCallback(async () => {
     if (!supabase) {
@@ -23,14 +24,21 @@ export function PolicyResources() {
       return;
     }
 
-    const { data } = await supabase
+    setLoading(true);
+    setLoadError(null);
+
+    const { data, error } = await supabase
       .from("documents")
       .select("id,title,summary,document_type,storage_bucket,storage_path,access_level,created_at")
       .eq("document_type", "policy")
       .eq("access_level", "public")
       .order("created_at", { ascending: false });
 
-    setResources((data ?? []) as ResourceDocument[]);
+    if (error) {
+      setLoadError("Published policies could not be loaded. Please try again.");
+    } else {
+      setResources((data ?? []) as ResourceDocument[]);
+    }
     setLoading(false);
   }, [supabase]);
 
@@ -40,7 +48,16 @@ export function PolicyResources() {
   }, [loadResources]);
 
   if (loading) {
-    return <p className="resource-empty">Loading published policies...</p>;
+    return <p className="resource-empty" role="status">Loading published policies...</p>;
+  }
+
+  if (loadError) {
+    return (
+      <div className="resource-empty resource-load-error" role="alert">
+        <p>{loadError}</p>
+        <button type="button" onClick={() => void loadResources()}>Retry</button>
+      </div>
+    );
   }
 
   if (!resources.length) {

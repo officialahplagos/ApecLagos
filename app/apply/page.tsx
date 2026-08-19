@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { MembershipApplicationForm } from "../components/MembershipApplicationForm";
 
@@ -13,7 +14,7 @@ export default function MembershipApplicationPage() {
     <main className="application-shell">
       <header className="application-header">
         <Link className="brand-lockup" href="/" aria-label="APEC Lagos home">
-          <img src="/logo.svg" alt="" className="brand-mark" />
+          <Image src="/logo.svg" alt="" className="brand-mark" width={64} height={64} priority />
           <span>
             <strong>APEC Lagos</strong>
             <small>Association of Providers of Elderly Care</small>

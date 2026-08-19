@@ -32,14 +32,6 @@
   ],
   "exclude": [
     "node_modules",
-    "build",
-    "db",
-    "dist",
-    "drizzle",
-    "examples",
-    "supabase/functions",
-    "worker",
-    "drizzle.config.ts",
-    "vite.config.ts"
+    "supabase/functions"
   ]
 }

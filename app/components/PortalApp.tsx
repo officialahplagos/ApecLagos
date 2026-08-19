@@ -1,6 +1,7 @@
 "use client";
 
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { Eye, EyeOff, FileText, Megaphone, Trash2, Upload } from "lucide-react";
 import { FunctionsHttpError, type AuthError, type User } from "@supabase/supabase-js";
@@ -121,9 +122,16 @@ function buildMedicalRisks(formData: FormData) {
   return selectedConditions.length ? selectedConditions.join("; ") : null;
 }
 
-function buildReference(prefix: string) {
-  return `${prefix}-${Date.now().toString().slice(-8)}`;
-}
+const allowedPhotoTypes = new Map([
+  ["image/jpeg", "jpg"],
+  ["image/png", "png"],
+  ["image/webp", "webp"],
+]);
+
+const policyContentTypes: Record<string, string> = {
+  pdf: "application/pdf",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+};
 
 export function PortalApp() {
   const configured = hasSupabaseConfig();
@@ -438,7 +446,7 @@ export function PortalApp() {
     if (!supabase) return;
 
     const formData = new FormData(event.currentTarget);
-    const email = String(formData.get("email") ?? "");
+    const email = String(formData.get("email") ?? "").trim().toLowerCase();
     const password = String(formData.get("password") ?? "");
 
     setLoading(true);
@@ -520,7 +528,8 @@ export function PortalApp() {
     event.preventDefault();
     if (!supabase || !user || !isAdmin) return;
 
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     const expiresAt = cleanOptional(formData.get("expiresAt"));
     setLoading(true);
     setNotice(null);
@@ -543,7 +552,7 @@ export function PortalApp() {
       return;
     }
 
-    event.currentTarget.reset();
+    form.reset();
     await refreshPublicData();
     setNotice({ tone: "success", text: "Announcement published." });
   }
@@ -552,7 +561,8 @@ export function PortalApp() {
     event.preventDefault();
     if (!supabase || !user || !isAdmin) return;
 
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     const file = formData.get("policyFile");
     if (!(file instanceof File) || file.size === 0) {
       setNotice({ tone: "error", text: "Select a PDF or Word policy document." });
@@ -564,14 +574,21 @@ export function PortalApp() {
       setNotice({ tone: "error", text: "Policy documents must be PDF or DOCX files." });
       return;
     }
+    if (file.size > 10 * 1024 * 1024) {
+      setNotice({ tone: "error", text: "Policy documents must be 10 MB or smaller." });
+      return;
+    }
+
+    const contentType = policyContentTypes[extension];
+    if (file.type && file.type !== contentType) {
+      setNotice({ tone: "error", text: "The selected file content does not match its extension." });
+      return;
+    }
 
     const safeFileName = file.name
       .replace(/[^a-zA-Z0-9._-]+/g, "-")
       .replace(/^-+|-+$/g, "") || `policy.${extension}`;
     const storagePath = `policies/${Date.now()}-${crypto.randomUUID()}-${safeFileName}`;
-    const contentType = extension === "pdf"
-      ? "application/pdf"
-      : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
     setLoading(true);
     setNotice(null);
 
@@ -603,7 +620,7 @@ export function PortalApp() {
     }
 
     setLoading(false);
-    event.currentTarget.reset();
+    form.reset();
     await refreshPublicData();
     setNotice({ tone: "success", text: "Policy published in the Resources section." });
   }
@@ -645,9 +662,9 @@ export function PortalApp() {
     event.preventDefault();
     if (!supabase || !user) return;
 
-    const formData = new FormData(event.currentTarget);
-    const reference = buildReference("APEC-ME");
-    const age = Number(formData.get("age"));
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const ageText = String(formData.get("age") ?? "").trim();
     const photo = formData.get("photo");
     let photoPath: string | null = null;
 
@@ -656,63 +673,57 @@ export function PortalApp() {
 
     try {
       if (photo instanceof File && photo.size > 0) {
-        const rawExtension = photo.name.split(".").pop()?.toLowerCase();
-        const extension = ["jpg", "jpeg", "png", "webp"].includes(rawExtension ?? "")
-          ? rawExtension
-          : "jpg";
-        photoPath = `${user.id}/missing-elders/${reference}.${extension}`;
+        const extension = allowedPhotoTypes.get(photo.type);
+        if (!extension) throw new Error("Upload a JPG, PNG, or WebP photo.");
+        if (photo.size > 5 * 1024 * 1024) throw new Error("The photo must be 5 MB or smaller.");
+
+        photoPath = `public-intake/${crypto.randomUUID()}.${extension}`;
 
         const { error: uploadError } = await supabase.storage
           .from("missing-elder-photos")
           .upload(photoPath, photo, {
-            contentType: photo.type || "image/jpeg",
+            contentType: photo.type,
             upsert: false,
           });
 
         if (uploadError) throw uploadError;
       }
 
-      const { data: caseRow, error: caseError } = await supabase
-        .from("missing_elder_cases")
-        .insert({
-          public_reference: reference,
-          elder_name: String(formData.get("elderName") ?? ""),
-          approximate_age: Number.isFinite(age) ? age : null,
-          photo_path: photoPath,
-          last_seen_location: String(formData.get("lastSeenLocation") ?? ""),
-          last_seen_at: cleanOptional(formData.get("lastSeenAt")),
-          public_notes: cleanOptional(formData.get("publicNotes")),
-          police_reference: cleanOptional(formData.get("policeReference")),
-          public_contact_phone: String(formData.get("contactPhone") ?? "").trim(),
-          status: "pending_review",
-          created_by: user.id,
-        })
-        .select("id")
-        .single();
+      const { data: reference, error } = await supabase.rpc(
+        "submit_missing_elder_report",
+        {
+          p_elder_name: String(formData.get("elderName") ?? "").trim(),
+          p_approximate_age: ageText ? Number(ageText) : null,
+          p_photo_path: photoPath,
+          p_last_seen_location: String(formData.get("lastSeenLocation") ?? "").trim(),
+          p_last_seen_at: cleanOptional(formData.get("lastSeenAt"))
+            ? new Date(String(formData.get("lastSeenAt"))).toISOString()
+            : null,
+          p_public_notes: cleanOptional(formData.get("publicNotes")),
+          p_police_reference: cleanOptional(formData.get("policeReference")),
+          p_public_contact_phone: String(formData.get("contactPhone") ?? "").trim(),
+          p_submitter_name: String(formData.get("submitterName") ?? "").trim(),
+          p_submitter_phone: String(formData.get("submitterPhone") ?? "").trim(),
+          p_family_contact_name: cleanOptional(formData.get("contactName")),
+          p_medical_risks: buildMedicalRisks(formData),
+          p_private_notes: null,
+          p_consent_confirmed: formData.get("consentConfirmed") === "on",
+        },
+      );
 
-      if (caseError) throw caseError;
+      if (error) throw error;
 
-      const { error: detailsError } = await supabase
-        .from("missing_elder_private_details")
-        .insert({
-          case_id: caseRow.id,
-          submitter_name: cleanOptional(formData.get("submitterName")),
-          submitter_phone: cleanOptional(formData.get("submitterPhone")),
-          family_contact_name: String(formData.get("contactName") ?? ""),
-          family_contact_phone: String(formData.get("contactPhone") ?? ""),
-          medical_risks: buildMedicalRisks(formData),
-        });
-
-      if (detailsError) throw detailsError;
-
-      event.currentTarget.reset();
+      form.reset();
       await refreshPublicData();
       await refreshStaffData();
       setNotice({
         tone: "success",
-        text: "Missing elder alert submitted for safeguarding review.",
+        text: `Missing elder alert submitted for safeguarding review. Reference ${String(reference)}.`,
       });
     } catch (error) {
+      if (photoPath) {
+        await supabase.storage.from("missing-elder-photos").remove([photoPath]);
+      }
       setNotice({ tone: "error", text: getErrorMessage(error) });
     } finally {
       setLoading(false);
@@ -882,6 +893,17 @@ export function PortalApp() {
   ) {
     if (!supabase) return;
 
+    if (
+      profileRow.id === user?.id &&
+      (role !== profileRow.role || status !== profileRow.status)
+    ) {
+      setNotice({
+        tone: "error",
+        text: "You cannot change your own role or access status. Ask another administrator.",
+      });
+      return;
+    }
+
     setLoading(true);
     setNotice(null);
 
@@ -906,7 +928,8 @@ export function PortalApp() {
     event.preventDefault();
     if (!supabase) return;
 
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
 
     setLoading(true);
     setNotice(null);
@@ -921,7 +944,7 @@ export function PortalApp() {
           nin_last4: cleanOptional(formData.get("ninLast4")),
           bvn_last4: cleanOptional(formData.get("bvnLast4")),
           consent_obtained: formData.get("consentObtained") === "on",
-          status: "active",
+          status: "under_review",
         })
         .select("id")
         .single();
@@ -944,7 +967,14 @@ export function PortalApp() {
 
       if (referenceError) throw referenceError;
 
-      event.currentTarget.reset();
+      const { error: activationError } = await supabase
+        .from("caregiver_profiles")
+        .update({ status: "active" })
+        .eq("id", caregiver.id);
+
+      if (activationError) throw activationError;
+
+      form.reset();
       await refreshStaffData();
       setNotice({
         tone: "success",
@@ -961,7 +991,7 @@ export function PortalApp() {
     <main className="portal-shell">
       <header className="portal-header">
         <Link className="brand-lockup" href="/" aria-label="Back to APEC Lagos home">
-          <img src="/logo.svg" alt="" className="brand-mark" />
+          <Image src="/logo.svg" alt="" className="brand-mark" width={64} height={64} priority />
           <span>
             <strong>APEC Lagos</strong>
             <small>Secure member portal</small>
@@ -1330,6 +1360,8 @@ export function PortalApp() {
                       return (
                         <div className="portal-row-card with-photo" key={caseItem.id}>
                           {photoUrl ? (
+                            // Supabase storage images are already access-controlled and externally hosted.
+                            // eslint-disable-next-line @next/next/no-img-element
                             <img
                               className="case-photo-thumb"
                               src={photoUrl}
@@ -1570,11 +1602,11 @@ export function PortalApp() {
               </label>
               <label>
                 Submitter name
-                <input name="submitterName" placeholder="Person reporting" />
+                <input name="submitterName" required placeholder="Person reporting" />
               </label>
               <label>
                 Submitter phone
-                <input name="submitterPhone" placeholder="080..." />
+                <input name="submitterPhone" required placeholder="080..." />
               </label>
               <label>
                 Contact name
@@ -1586,7 +1618,7 @@ export function PortalApp() {
               </label>
               <label className="span-2">
                 Public notes
-                <textarea name="publicNotes" placeholder="Clothing, safe approach guidance, public description" />
+                <textarea name="publicNotes" maxLength={1500} placeholder="Clothing, safe approach guidance, public description" />
               </label>
               <fieldset className="medical-conditions span-2" aria-describedby="medical-conditions-help">
                 <legend>Likely medical conditions</legend>
@@ -1614,10 +1646,15 @@ export function PortalApp() {
                   Other condition or important details
                   <textarea
                     name="medicalRisksOther"
+                    maxLength={1200}
                     placeholder="Add another likely condition, medication need, or relevant detail"
                   />
                 </label>
               </fieldset>
+              <label className="portal-check span-2">
+                <input name="consentConfirmed" type="checkbox" required />
+                I confirm that I am authorised to submit this information for safeguarding review
+              </label>
               <button type="submit" disabled={loading}>
                 Submit Alert
               </button>
@@ -1698,6 +1735,8 @@ export function PortalApp() {
                 return (
                   <div className="portal-row-card with-photo" key={caseItem.id}>
                     {photoUrl ? (
+                      // Supabase storage images are already access-controlled and externally hosted.
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img
                         className="case-photo-thumb"
                         src={photoUrl}

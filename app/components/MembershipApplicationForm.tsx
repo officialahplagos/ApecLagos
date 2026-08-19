@@ -24,6 +24,8 @@ export function MembershipApplicationForm() {
     [configured],
   );
   const [categories, setCategories] = useState<MembershipCategory[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(configured);
+  const [categoryError, setCategoryError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [submittedReference, setSubmittedReference] = useState<string | null>(null);
@@ -37,8 +39,19 @@ export function MembershipApplicationForm() {
       .select("id,name,description,annual_dues,is_active")
       .eq("is_active", true)
       .order("name")
-      .then(({ data }) => {
-        if (active) setCategories((data ?? []) as MembershipCategory[]);
+      .then(({ data, error }) => {
+        if (!active) return;
+
+        if (error || !data?.length) {
+          setCategoryError(
+            error
+              ? "Membership categories could not be loaded. Please try again shortly."
+              : "Membership applications are temporarily unavailable while categories are updated.",
+          );
+        } else {
+          setCategories(data as MembershipCategory[]);
+        }
+        setLoadingCategories(false);
       });
 
     return () => {
@@ -122,7 +135,7 @@ export function MembershipApplicationForm() {
   }
 
   return (
-    <form className="application-form" onSubmit={handleSubmit}>
+    <form className="application-form" onSubmit={handleSubmit} aria-busy={loading}>
       <div className="application-form-head">
         <span className="portal-kicker">Member onboarding</span>
         <h1>Apply for APEC Lagos membership</h1>
@@ -143,8 +156,10 @@ export function MembershipApplicationForm() {
           </label>
           <label>
             Membership category
-            <select name="categoryId" required defaultValue="">
-              <option value="" disabled>Select category</option>
+            <select name="categoryId" required defaultValue="" disabled={loadingCategories || Boolean(categoryError)}>
+              <option value="" disabled>
+                {loadingCategories ? "Loading categories..." : "Select category"}
+              </option>
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>{category.name}</option>
               ))}
@@ -220,10 +235,15 @@ export function MembershipApplicationForm() {
         <input name="website" tabIndex={-1} autoComplete="off" />
       </label>
 
-      <button className="application-submit" type="submit" disabled={loading || !configured}>
+      <button
+        className="application-submit"
+        type="submit"
+        disabled={loading || !configured || loadingCategories || Boolean(categoryError)}
+      >
         {loading ? "Submitting application..." : "Submit for compliance review"}
       </button>
       {!configured ? <p className="form-config-error">Application service is unavailable.</p> : null}
+      {categoryError ? <p className="form-config-error">{categoryError}</p> : null}
       <p className="application-login-link">
         Already approved? <Link href="/portal">Sign in to the member portal</Link>
       </p>

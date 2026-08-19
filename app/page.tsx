@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { MobileMenu } from "./components/MobileMenu";
 import { PolicyResources } from "./components/PolicyResources";
 import { PublicMissingElderRegistry } from "./components/PublicMissingElderRegistry";
@@ -119,7 +120,7 @@ export default function Home() {
     <main>
       <header className="site-header">
         <a className="brand-lockup" href="#top" aria-label="APEC Lagos home">
-          <img src="/logo.svg" alt="" className="brand-mark" />
+          <Image src="/logo.svg" alt="" className="brand-mark" width={64} height={64} priority />
           <span>
             <strong>APEC Lagos</strong>
             <small>Association of Providers of Elderly Care</small>
@@ -343,7 +344,7 @@ export default function Home() {
           <span><AppIcon name="missing" /></span>
           <span><AppIcon name="phone" /></span>
         </div>
-        <img src="/logo.svg" alt="" />
+        <Image src="/logo.svg" alt="" width={52} height={52} />
         <span>
           APEC Lagos. Built for elderly care membership, coordination, and
           safeguarding.
