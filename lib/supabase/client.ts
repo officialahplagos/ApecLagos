@@ -93,6 +93,7 @@ export type MissingElderCase = {
 export type CaregiverProfile = {
   id: string;
   legal_name: string;
+  photo_path: string | null;
   phone: string | null;
   email: string | null;
   nin_last4: string | null;

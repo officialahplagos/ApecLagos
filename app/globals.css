@@ -1639,6 +1639,47 @@ select {
   width: 18px;
 }
 
+.rehire-choice {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin: 0;
+  padding: 12px;
+}
+
+.rehire-choice legend {
+  color: #455a58;
+  font-size: 0.86rem;
+  font-weight: 750;
+  padding: 0 5px;
+}
+
+.rehire-choice-options {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.portal-form .rehire-choice-options label {
+  align-items: center;
+  background: #f7faf8;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  cursor: pointer;
+  display: flex;
+  font-weight: 800;
+  gap: 10px;
+  min-height: 44px;
+  padding: 10px 12px;
+}
+
+.rehire-choice-options input {
+  accent-color: var(--teal);
+  height: 18px;
+  margin: 0;
+  min-height: 0;
+  width: 18px;
+}
+
 .medical-conditions {
   border: 1px solid var(--line);
   border-radius: 7px;
@@ -1848,6 +1889,41 @@ select {
 
 .compact-list {
   margin-top: 18px;
+}
+
+.portal-list > .caregiver-record-row {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 58px minmax(0, 1fr);
+}
+
+.caregiver-record-photo,
+.caregiver-record-photo-placeholder {
+  align-items: center;
+  background: #e5f3ee;
+  border: 1px solid #c8ded6;
+  border-radius: 7px;
+  display: flex;
+  height: 58px;
+  justify-content: center;
+  object-fit: cover;
+  width: 58px;
+}
+
+.caregiver-record-photo-placeholder {
+  color: var(--teal-dark);
+}
+
+.caregiver-record-photo-placeholder svg {
+  height: 28px;
+  width: 28px;
+}
+
+.caregiver-record-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
 }
 
 .portal-table {

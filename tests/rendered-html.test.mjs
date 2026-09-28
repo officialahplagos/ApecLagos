@@ -148,7 +148,7 @@ test("server-renders the public membership application route", async () => {
 });
 
 test("keeps APEC branding and uses production safeguarding workflows", async () => {
-  const [css, page, publicIntake, policyResources, portal, application, installApp, mobileMenu, manifest, serviceWorker, nextConfig, migration, productionMigration, policyMigration, serviceRoleMigration, reviewFunction, layout, packageJson, readme] = await Promise.all([
+  const [css, page, publicIntake, policyResources, portal, application, installApp, mobileMenu, manifest, serviceWorker, nextConfig, migration, productionMigration, policyMigration, caregiverPhotoMigration, serviceRoleMigration, reviewFunction, layout, packageJson, readme] = await Promise.all([
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/PublicMissingElderRegistry.tsx", import.meta.url), "utf8"),
@@ -177,6 +177,13 @@ test("keeps APEC branding and uses production safeguarding workflows", async () 
     readFile(
       new URL(
         "../supabase/migrations/20260816090000_policy_resources_and_admin_lockdown.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+    readFile(
+      new URL(
+        "../supabase/migrations/20260928120000_caregiver_profile_photos.sql",
         import.meta.url,
       ),
       "utf8",
@@ -256,6 +263,13 @@ test("keeps APEC branding and uses production safeguarding workflows", async () 
   assert.match(portal, /You cannot change your own role or access status/);
   assert.match(portal, /status: "under_review"/);
   assert.match(portal, /update\(\{ status: "active" \}\)/);
+  assert.match(portal, /caregiverPhoto/);
+  assert.match(portal, /caregiver-photos/);
+  assert.match(portal, /createSignedUrls\(photoPaths, 60 \* 60\)/);
+  assert.match(portal, /rehireChoice === "yes"/);
+  assert.match(portal, /value="yes" required/);
+  assert.match(portal, /value="no" required/);
+  assert.match(portal, /Previous employer would rehire: \{rehireLabel\}/);
   assert.doesNotMatch(portal, /Claim First Admin|handleClaimFirstAdmin/);
   assert.match(portal, /applicationEditDirty/);
   assert.match(portal, /form\.reportValidity\(\)/);
@@ -282,6 +296,10 @@ test("keeps APEC branding and uses production safeguarding workflows", async () 
   assert.match(policyMigration, /Public can read published policy documents/);
   assert.match(policyMigration, /apec-public-resources/);
   assert.match(policyMigration, /revoke all on function public\.claim_first_admin/);
+  assert.match(caregiverPhotoMigration, /add column if not exists photo_path text/);
+  assert.match(caregiverPhotoMigration, /'caregiver-photos'/);
+  assert.match(caregiverPhotoMigration, /Staff can read caregiver photos/);
+  assert.match(caregiverPhotoMigration, /private\.is_staff\(\)/);
   assert.match(reviewFunction, /2026-08-19-custom-domain/);
   assert.match(reviewFunction, /https:\/\/www\.apeclagos\.org\.ng/);
   assert.match(reviewFunction, /generateLink/);

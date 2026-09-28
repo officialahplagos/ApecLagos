@@ -3,7 +3,7 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Eye, EyeOff, FileText, Megaphone, Trash2, Upload } from "lucide-react";
+import { Eye, EyeOff, FileText, Megaphone, Trash2, Upload, UserRound } from "lucide-react";
 import { FunctionsHttpError, type AuthError, type User } from "@supabase/supabase-js";
 import {
   createBrowserSupabaseClient,
@@ -156,6 +156,7 @@ export function PortalApp() {
   const [caregiverReferences, setCaregiverReferences] = useState<
     CaregiverEmploymentReference[]
   >([]);
+  const [caregiverPhotoUrls, setCaregiverPhotoUrls] = useState<Record<string, string>>({});
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [passwordSetup, setPasswordSetup] = useState(false);
@@ -252,6 +253,7 @@ export function PortalApp() {
       setReviewCases([]);
       setCaregivers([]);
       setCaregiverReferences([]);
+      setCaregiverPhotoUrls({});
       setProfiles([]);
       return;
     }
@@ -281,7 +283,7 @@ export function PortalApp() {
         .limit(12),
       supabase
         .from("caregiver_profiles")
-        .select("id,legal_name,phone,email,nin_last4,bvn_last4,consent_obtained,status,created_at")
+        .select("id,legal_name,photo_path,phone,email,nin_last4,bvn_last4,consent_obtained,status,created_at")
         .order("created_at", { ascending: false })
         .limit(12),
       supabase
@@ -309,7 +311,31 @@ export function PortalApp() {
     }
 
     if (!caregiversResult.error) {
-      setCaregivers((caregiversResult.data ?? []) as CaregiverProfile[]);
+      const caregiverRows = (caregiversResult.data ?? []) as CaregiverProfile[];
+      setCaregivers(caregiverRows);
+
+      const photoPaths = caregiverRows.flatMap((caregiver) =>
+        caregiver.photo_path ? [caregiver.photo_path] : [],
+      );
+      if (photoPaths.length) {
+        const { data: signedPhotos, error: signedPhotoError } = await supabase.storage
+          .from("caregiver-photos")
+          .createSignedUrls(photoPaths, 60 * 60);
+
+        if (!signedPhotoError) {
+          setCaregiverPhotoUrls(
+            Object.fromEntries(
+              (signedPhotos ?? [])
+                .filter((photo) => photo.signedUrl)
+                .map((photo) => [photo.path, photo.signedUrl]),
+            ),
+          );
+        } else {
+          setCaregiverPhotoUrls({});
+        }
+      } else {
+        setCaregiverPhotoUrls({});
+      }
     }
 
     if (!referencesResult.error) {
@@ -926,19 +952,47 @@ export function PortalApp() {
 
   async function handleCaregiverReference(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!supabase) return;
+    if (!supabase || !user) return;
 
     const form = event.currentTarget;
     const formData = new FormData(form);
+    const caregiverPhoto = formData.get("caregiverPhoto");
+    const rehireChoice = String(formData.get("rehireEligible") ?? "");
+    let caregiverPhotoPath: string | null = null;
+    let caregiverCreated = false;
+
+    if (rehireChoice !== "yes" && rehireChoice !== "no") {
+      setNotice({ tone: "error", text: "Select Yes or No for rehire eligibility." });
+      return;
+    }
 
     setLoading(true);
     setNotice(null);
 
     try {
+      if (caregiverPhoto instanceof File && caregiverPhoto.size > 0) {
+        const extension = allowedPhotoTypes.get(caregiverPhoto.type);
+        if (!extension) throw new Error("Upload a JPG, PNG, or WebP caregiver photo.");
+        if (caregiverPhoto.size > 5 * 1024 * 1024) {
+          throw new Error("The caregiver photo must be 5 MB or smaller.");
+        }
+
+        caregiverPhotoPath = `${user.id}/caregivers/${crypto.randomUUID()}.${extension}`;
+        const { error: photoUploadError } = await supabase.storage
+          .from("caregiver-photos")
+          .upload(caregiverPhotoPath, caregiverPhoto, {
+            contentType: caregiverPhoto.type,
+            upsert: false,
+          });
+
+        if (photoUploadError) throw photoUploadError;
+      }
+
       const { data: caregiver, error: caregiverError } = await supabase
         .from("caregiver_profiles")
         .insert({
           legal_name: String(formData.get("legalName") ?? ""),
+          photo_path: caregiverPhotoPath,
           phone: cleanOptional(formData.get("phone")),
           email: cleanOptional(formData.get("email")),
           nin_last4: cleanOptional(formData.get("ninLast4")),
@@ -950,6 +1004,7 @@ export function PortalApp() {
         .single();
 
       if (caregiverError) throw caregiverError;
+      caregiverCreated = true;
 
       const { error: referenceError } = await supabase
         .from("caregiver_employment_references")
@@ -959,7 +1014,7 @@ export function PortalApp() {
           supervisor_name: cleanOptional(formData.get("supervisorName")),
           supervisor_contact: cleanOptional(formData.get("supervisorContact")),
           conduct_summary: cleanOptional(formData.get("conductSummary")),
-          rehire_eligible: formData.get("rehireEligible") === "on",
+          rehire_eligible: rehireChoice === "yes",
           consent_verified: formData.get("consentObtained") === "on",
           verification_status: "verified",
           verified_by: user?.id ?? null,
@@ -981,6 +1036,9 @@ export function PortalApp() {
         text: "Caregiver reference added to the shared register.",
       });
     } catch (error) {
+      if (caregiverPhotoPath && !caregiverCreated) {
+        await supabase.storage.from("caregiver-photos").remove([caregiverPhotoPath]);
+      }
       setNotice({ tone: "error", text: getErrorMessage(error) });
     } finally {
       setLoading(false);
@@ -1425,6 +1483,14 @@ export function PortalApp() {
                     <input name="legalName" required placeholder="Verified full name" />
                   </label>
                   <label>
+                    Caregiver photo (optional)
+                    <input
+                      name="caregiverPhoto"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                    />
+                  </label>
+                  <label>
                     Phone
                     <input name="phone" placeholder="080..." />
                   </label>
@@ -1460,10 +1526,19 @@ export function PortalApp() {
                     <input name="consentObtained" type="checkbox" required />
                     Consent obtained for reference registration
                   </label>
-                  <label className="portal-check span-2">
-                    <input name="rehireEligible" type="checkbox" />
-                    Previous employer would rehire
-                  </label>
+                  <fieldset className="rehire-choice span-2">
+                    <legend>Previous employer would rehire</legend>
+                    <div className="rehire-choice-options">
+                      <label>
+                        <input name="rehireEligible" type="radio" value="yes" required />
+                        Yes
+                      </label>
+                      <label>
+                        <input name="rehireEligible" type="radio" value="no" required />
+                        No
+                      </label>
+                    </div>
+                  </fieldset>
                   <button type="submit" disabled={loading}>
                     Add Caregiver Reference
                   </button>
@@ -1473,13 +1548,34 @@ export function PortalApp() {
                     const reference = caregiverReferences.find(
                       (item) => item.caregiver_id === caregiver.id,
                     );
+                    const rehireLabel = reference?.rehire_eligible == null
+                      ? "Not recorded"
+                      : reference.rehire_eligible
+                        ? "Yes"
+                        : "No";
                     return (
-                      <div key={caregiver.id}>
-                        <b>{caregiver.legal_name}</b>
-                        <span>
-                          {reference?.role_title ?? "Reference pending"} -{" "}
-                          {reference?.verification_status ?? caregiver.status}
-                        </span>
+                      <div className="caregiver-record-row" key={caregiver.id}>
+                        {caregiver.photo_path && caregiverPhotoUrls[caregiver.photo_path] ? (
+                          // Signed Supabase URLs expire and cannot use a fixed Next image host rule.
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            className="caregiver-record-photo"
+                            src={caregiverPhotoUrls[caregiver.photo_path]}
+                            alt={`${caregiver.legal_name} caregiver record`}
+                          />
+                        ) : (
+                          <span className="caregiver-record-photo-placeholder" aria-hidden="true">
+                            <UserRound />
+                          </span>
+                        )}
+                        <div className="caregiver-record-copy">
+                          <b>{caregiver.legal_name}</b>
+                          <span>
+                            {reference?.role_title ?? "Reference pending"} -{" "}
+                            {reference?.verification_status ?? caregiver.status}
+                          </span>
+                          <span>Previous employer would rehire: {rehireLabel}</span>
+                        </div>
                       </div>
                     );
                   })}
