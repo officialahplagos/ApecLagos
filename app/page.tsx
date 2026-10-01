@@ -320,8 +320,8 @@ export default function Home() {
           <span>Association operations</span>
           <h2>Membership and Admin Portal</h2>
           <p>
-            Built on a secure Supabase backend with role-based access for
-            members, secretaries, committee users, and admins.
+            Secure, role-based access keeps membership services, association
+            records, and safeguarding work available to authorised users.
           </p>
         </div>
         <div className="portal-grid">

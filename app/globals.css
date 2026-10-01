@@ -761,6 +761,42 @@ h1 {
   white-space: pre-line;
 }
 
+.update-card p.is-collapsed {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.update-read-more {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--teal-dark);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-weight: 800;
+  gap: 5px;
+  margin-top: 14px;
+  padding: 4px 0;
+}
+
+.update-read-more:hover {
+  color: var(--navy);
+}
+
+.update-read-more:focus-visible {
+  border-radius: 4px;
+  outline: 3px solid rgba(217, 164, 65, 0.55);
+  outline-offset: 3px;
+}
+
+.update-read-more svg {
+  height: 17px;
+  width: 17px;
+}
+
 .resource-empty {
   background: var(--white);
   border: 1px dashed #b9cbc7;

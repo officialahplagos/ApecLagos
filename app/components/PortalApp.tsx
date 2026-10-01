@@ -1151,17 +1151,16 @@ export function PortalApp() {
           <span className="eyebrow">Secure association portal</span>
           <h1>Member access, applications, and safeguarding intake.</h1>
           <p>
-            This portal connects the APEC Lagos platform to Supabase Auth,
-            member records, public announcements, missing elder cases, caregiver
-            reference records, and admin-controlled review workflows.
+            Access membership records, association updates, missing elder
+            reports, caregiver references, and authorised safeguarding
+            workflows in one place.
           </p>
         </div>
         <div className="portal-status-panel">
-          <b>{configured ? "Supabase project connected" : "Supabase key needed"}</b>
+          <b>Secure access</b>
           <span>
-            {configured
-              ? "Authentication, database reads, and storage-backed alerts are ready."
-              : "Add NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY to enable live login."}
+            Member and administrative areas are protected according to each
+            user&apos;s authorised role.
           </span>
         </div>
       </section>
@@ -1180,11 +1179,10 @@ export function PortalApp() {
 
       {!configured ? (
         <section className="portal-card">
-          <h2>Connect Supabase</h2>
+          <h2>Portal temporarily unavailable</h2>
           <p>
-            The project URL is already set. Add the publishable key from
-            Supabase Project Settings to `.env.local` or Vercel environment
-            variables, then restart the app.
+            Member access is temporarily unavailable. Please try again later or
+            contact APEC Lagos administration for assistance.
           </p>
         </section>
       ) : booting ? (

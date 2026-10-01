@@ -129,7 +129,7 @@ test("server-renders the Supabase-backed portal route", async () => {
   assert.match(html, /Member access, applications, and safeguarding intake/);
   assert.match(
     html,
-    /Sign in to the portal|Supabase key needed|Supabase project connected|Loading portal/,
+    /Sign in to the portal|Secure access|Loading portal/,
   );
   assert.match(html, /Missing Elder Alerts/);
   assert.match(html, /Apply for Membership/);
@@ -240,6 +240,15 @@ test("keeps APEC branding and uses production safeguarding workflows", async () 
   assert.match(publicUpdates, /apec-public-post-images/);
   assert.match(publicUpdates, /target_audience/);
   assert.match(publicUpdates, /No public updates have been published yet/);
+  assert.match(publicUpdates, /Read more/);
+  assert.match(publicUpdates, /Show less/);
+  assert.match(publicUpdates, /aria-expanded/);
+  assert.match(css, /\.update-read-more/);
+  assert.doesNotMatch(page, /Supabase backend/);
+  assert.doesNotMatch(
+    portal,
+    /Supabase project connected|Supabase key needed|Connect Supabase|NEXT_PUBLIC_SUPABASE_/,
+  );
   assert.match(policyResources, /apec-public-resources|storage_bucket/);
   assert.match(policyResources, /No APEC policy documents have been published yet/);
   assert.match(policyResources, /Published policies could not be loaded/);

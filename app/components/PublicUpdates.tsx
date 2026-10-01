@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CalendarDays, ImageIcon } from "lucide-react";
+import { CalendarDays, ChevronDown, ChevronUp, ImageIcon } from "lucide-react";
 import {
   createBrowserSupabaseClient,
   hasSupabaseConfig,
@@ -25,6 +25,21 @@ export function PublicUpdates() {
   const [updates, setUpdates] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(configured);
   const [failed, setFailed] = useState(false);
+  const [expandedUpdates, setExpandedUpdates] = useState<Set<string>>(
+    () => new Set(),
+  );
+
+  const toggleUpdate = (id: string) => {
+    setExpandedUpdates((current) => {
+      const next = new Set(current);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
 
   const loadUpdates = useCallback(async () => {
     if (!supabase) {
@@ -81,6 +96,9 @@ export function PublicUpdates() {
         const imageUrl = update.image_path
           ? supabase?.storage.from("apec-public-post-images").getPublicUrl(update.image_path).data.publicUrl
           : null;
+        const isExpanded = expandedUpdates.has(update.id);
+        const hasMoreContent = update.body.length > 240;
+        const bodyId = `update-body-${update.id}`;
 
         return (
           <article className="update-card" key={update.id}>
@@ -103,7 +121,24 @@ export function PublicUpdates() {
                 {update.is_pinned ? <strong>Featured</strong> : null}
               </div>
               <h3>{update.title}</h3>
-              <p>{update.body}</p>
+              <p
+                className={hasMoreContent && !isExpanded ? "is-collapsed" : undefined}
+                id={bodyId}
+              >
+                {update.body}
+              </p>
+              {hasMoreContent ? (
+                <button
+                  aria-controls={bodyId}
+                  aria-expanded={isExpanded}
+                  className="update-read-more"
+                  type="button"
+                  onClick={() => toggleUpdate(update.id)}
+                >
+                  {isExpanded ? "Show less" : "Read more"}
+                  {isExpanded ? <ChevronUp aria-hidden="true" /> : <ChevronDown aria-hidden="true" />}
+                </button>
+              ) : null}
             </div>
           </article>
         );
