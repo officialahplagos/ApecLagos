@@ -148,10 +148,11 @@ test("server-renders the public membership application route", async () => {
 });
 
 test("keeps APEC branding and uses production safeguarding workflows", async () => {
-  const [css, page, publicIntake, policyResources, portal, application, installApp, mobileMenu, manifest, serviceWorker, nextConfig, migration, productionMigration, policyMigration, caregiverPhotoMigration, serviceRoleMigration, reviewFunction, layout, packageJson, readme] = await Promise.all([
+  const [css, page, publicIntake, publicUpdates, policyResources, portal, application, installApp, mobileMenu, manifest, serviceWorker, nextConfig, migration, productionMigration, policyMigration, caregiverPhotoMigration, publicPostMigration, serviceRoleMigration, reviewFunction, layout, packageJson, readme] = await Promise.all([
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/PublicMissingElderRegistry.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/PublicUpdates.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/PolicyResources.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/PortalApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/MembershipApplicationForm.tsx", import.meta.url), "utf8"),
@@ -190,6 +191,13 @@ test("keeps APEC branding and uses production safeguarding workflows", async () 
     ),
     readFile(
       new URL(
+        "../supabase/migrations/20261001120000_public_announcement_images.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+    readFile(
+      new URL(
         "../supabase/migrations/20260814122500_membership_approval_service_role.sql",
         import.meta.url,
       ),
@@ -214,11 +222,14 @@ test("keeps APEC branding and uses production safeguarding workflows", async () 
   assert.match(css, /\.footer-icon-strip/);
   assert.match(css, /\.portal-shell/);
   assert.match(css, /\.resource-grid/);
+  assert.match(css, /\.updates-grid/);
   assert.match(css, /\.password-visibility-button/);
   assert.match(css, /\.install-app-button/);
   assert.match(css, /\.mobile-menu-open \.install-app-button/);
   assert.match(css, /\.install-dialog/);
   assert.match(page, /PublicMissingElderRegistry/);
+  assert.match(page, /PublicUpdates/);
+  assert.match(page, /Latest APEC Updates/);
   assert.match(page, /PolicyResources/);
   assert.match(page, /vettingSteps/);
   assert.match(publicIntake, /submit_missing_elder_report/);
@@ -226,6 +237,9 @@ test("keeps APEC branding and uses production safeguarding workflows", async () 
   assert.match(publicIntake, /consentConfirmed/);
   assert.match(publicIntake, /toISOString\(\)/);
   assert.match(publicIntake, /remove\(\[photoPath\]\)/);
+  assert.match(publicUpdates, /apec-public-post-images/);
+  assert.match(publicUpdates, /target_audience/);
+  assert.match(publicUpdates, /No public updates have been published yet/);
   assert.match(policyResources, /apec-public-resources|storage_bucket/);
   assert.match(policyResources, /No APEC policy documents have been published yet/);
   assert.match(policyResources, /Published policies could not be loaded/);
@@ -255,7 +269,10 @@ test("keeps APEC branding and uses production safeguarding workflows", async () 
   assert.match(portal, /Send Password Setup Email/);
   assert.match(portal, /password_setup/);
   assert.match(portal, /PasswordField/);
-  assert.match(portal, /Publish Announcement/);
+  assert.match(portal, /Publish Update/);
+  assert.match(portal, /announcementImage/);
+  assert.match(portal, /apec-public-post-images/);
+  assert.match(portal, /handleAnnouncementDelete/);
   assert.match(portal, /Publish Policy/);
   assert.match(portal, /apec-public-resources/);
   assert.match(portal, /file\.size > 10 \* 1024 \* 1024/);
@@ -300,6 +317,10 @@ test("keeps APEC branding and uses production safeguarding workflows", async () 
   assert.match(caregiverPhotoMigration, /'caregiver-photos'/);
   assert.match(caregiverPhotoMigration, /Staff can read caregiver photos/);
   assert.match(caregiverPhotoMigration, /private\.is_staff\(\)/);
+  assert.match(publicPostMigration, /add column if not exists image_path text/);
+  assert.match(publicPostMigration, /'apec-public-post-images'/);
+  assert.match(publicPostMigration, /Public can read APEC post images/);
+  assert.match(publicPostMigration, /private\.is_admin\(\)/);
   assert.match(reviewFunction, /2026-08-19-custom-domain/);
   assert.match(reviewFunction, /https:\/\/www\.apeclagos\.org\.ng/);
   assert.match(reviewFunction, /generateLink/);

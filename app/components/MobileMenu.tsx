@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
 const links = [
+  { href: "#updates", label: "Latest Updates" },
   { href: "#missing-elders", label: "Missing Elders" },
   { href: "#caregiver-register", label: "Caregiver Register" },
   { href: "#vetting", label: "Vetting" },

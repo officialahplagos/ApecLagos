@@ -2,6 +2,7 @@ import Image from "next/image";
 import { MobileMenu } from "./components/MobileMenu";
 import { PolicyResources } from "./components/PolicyResources";
 import { PublicMissingElderRegistry } from "./components/PublicMissingElderRegistry";
+import { PublicUpdates } from "./components/PublicUpdates";
 
 const vettingSteps = [
   "NIN verification with consent",
@@ -127,6 +128,7 @@ export default function Home() {
           </span>
         </a>
         <nav aria-label="Primary navigation">
+          <a href="#updates">Latest Updates</a>
           <a href="#missing-elders">Missing Elders</a>
           <a href="#caregiver-register">Caregiver Register</a>
           <a href="#vetting">Vetting</a>
@@ -199,6 +201,18 @@ export default function Home() {
             <p>{module.text}</p>
           </article>
         ))}
+      </section>
+
+      <section className="workspace-band updates" id="updates">
+        <div className="section-heading">
+          <span>News and notices</span>
+          <h2>Latest APEC Updates</h2>
+          <p>
+            Read official association news, event notices, public information,
+            and updates published by authorised APEC Lagos administrators.
+          </p>
+        </div>
+        <PublicUpdates />
       </section>
 
       <section className="workspace-band" id="missing-elders">

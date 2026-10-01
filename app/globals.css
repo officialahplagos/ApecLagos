@@ -650,6 +650,117 @@ h1 {
   border-top: 1px solid var(--line);
 }
 
+.workspace-band.updates {
+  background: #f8fbfa;
+  border-bottom: 1px solid var(--line);
+}
+
+.updates-empty {
+  background: var(--white);
+  border: 1px dashed #b9cbc7;
+  border-radius: 8px;
+  color: #536967;
+  margin-top: 28px;
+  padding: 24px;
+}
+
+.updates-load-error button {
+  background: var(--teal-dark);
+  border: 0;
+  border-radius: 6px;
+  color: var(--white);
+  cursor: pointer;
+  font-weight: 800;
+  margin-top: 14px;
+  min-height: 42px;
+  padding: 0 16px;
+}
+
+.updates-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 30px;
+}
+
+.update-card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.update-card-image,
+.update-card-image-placeholder {
+  aspect-ratio: 16 / 9;
+  background: var(--mint);
+  height: auto;
+  object-fit: cover;
+  width: 100%;
+}
+
+.update-card-image-placeholder {
+  align-items: center;
+  color: var(--teal-dark);
+  display: flex;
+  justify-content: center;
+}
+
+.update-card-image-placeholder svg {
+  height: 34px;
+  width: 34px;
+}
+
+.update-card-copy {
+  padding: 20px;
+}
+
+.update-card-meta {
+  align-items: center;
+  color: #607472;
+  display: flex;
+  font-size: 0.78rem;
+  font-weight: 750;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.update-card-meta span {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+}
+
+.update-card-meta svg {
+  height: 15px;
+  width: 15px;
+}
+
+.update-card-meta strong {
+  background: rgba(217, 164, 65, 0.17);
+  border-radius: 999px;
+  color: #795407;
+  padding: 5px 8px;
+}
+
+.update-card h3 {
+  color: var(--navy);
+  font-family: var(--font-display), var(--font-geist-sans), serif;
+  font-size: 1.55rem;
+  line-height: 1.15;
+  margin-top: 14px;
+}
+
+.update-card p {
+  color: #526966;
+  line-height: 1.65;
+  margin-top: 10px;
+  white-space: pre-line;
+}
+
 .resource-empty {
   background: var(--white);
   border: 1px dashed #b9cbc7;
@@ -747,6 +858,7 @@ h1 {
 #missing-elders,
 #caregiver-register,
 #vetting,
+#updates,
 #membership {
   scroll-margin-top: 120px;
 }
@@ -1769,6 +1881,81 @@ select {
   min-height: 100%;
 }
 
+.announcement-admin-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.announcement-admin-list > p {
+  margin: 0;
+}
+
+.announcement-admin-row {
+  align-items: center;
+  background: #f7faf8;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 56px minmax(0, 1fr) 42px;
+  padding: 10px;
+}
+
+.announcement-admin-row > img,
+.announcement-admin-placeholder {
+  align-items: center;
+  background: var(--mint);
+  border: 1px solid #c8ded6;
+  border-radius: 7px;
+  display: flex;
+  height: 56px;
+  justify-content: center;
+  object-fit: cover;
+  width: 56px;
+}
+
+.announcement-admin-placeholder {
+  color: var(--teal-dark);
+}
+
+.announcement-admin-placeholder svg {
+  height: 24px;
+  width: 24px;
+}
+
+.announcement-admin-row > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.announcement-admin-row b {
+  color: var(--navy);
+}
+
+.announcement-admin-row small {
+  color: #607472;
+  text-transform: capitalize;
+}
+
+.announcement-admin-row .icon-action-button {
+  align-items: center;
+  background: #fff1ee;
+  border: 1px solid #f1c7be;
+  color: #9b392b;
+  display: flex;
+  height: 40px;
+  justify-content: center;
+  padding: 0;
+  width: 40px;
+}
+
+.announcement-admin-row .icon-action-button svg {
+  height: 18px;
+  width: 18px;
+}
+
 .resource-admin-list {
   display: grid;
   gap: 10px;
@@ -2406,6 +2593,7 @@ footer img {
   .module-strip,
   .checklist-grid,
   .portal-grid,
+  .updates-grid,
   .resource-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -2485,6 +2673,7 @@ footer img {
   .module-strip,
   .checklist-grid,
   .portal-grid,
+  .updates-grid,
   .resource-grid,
   dl,
   .portal-form,

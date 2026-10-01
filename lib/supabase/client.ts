@@ -62,6 +62,8 @@ export type Announcement = {
   is_pinned: boolean;
   is_urgent: boolean;
   publish_at: string;
+  image_path: string | null;
+  image_alt: string | null;
 };
 
 export type ResourceDocument = {

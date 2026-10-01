@@ -3,7 +3,7 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Eye, EyeOff, FileText, Megaphone, Trash2, Upload, UserRound } from "lucide-react";
+import { Eye, EyeOff, FileText, ImagePlus, Megaphone, Trash2, Upload, UserRound } from "lucide-react";
 import { FunctionsHttpError, type AuthError, type User } from "@supabase/supabase-js";
 import {
   createBrowserSupabaseClient,
@@ -183,9 +183,9 @@ export function PortalApp() {
     const [announcementsResult, missingResult, resourcesResult] = await Promise.all([
       supabase
         .from("announcements")
-        .select("id,title,body,target_audience,is_pinned,is_urgent,publish_at")
+        .select("id,title,body,target_audience,is_pinned,is_urgent,publish_at,image_path,image_alt")
         .order("publish_at", { ascending: false })
-        .limit(5),
+        .limit(20),
       supabase
         .from("missing_elder_cases")
         .select(
@@ -556,31 +556,109 @@ export function PortalApp() {
 
     const form = event.currentTarget;
     const formData = new FormData(form);
+    const targetAudience = String(formData.get("targetAudience") ?? "public");
     const expiresAt = cleanOptional(formData.get("expiresAt"));
+    const image = formData.get("announcementImage");
+    let imagePath: string | null = null;
+
+    if (image instanceof File && image.size > 0) {
+      if (targetAudience !== "public") {
+        setNotice({ tone: "error", text: "Images can only be attached to public website posts." });
+        return;
+      }
+
+      const extension = allowedPhotoTypes.get(image.type);
+      if (!extension) {
+        setNotice({ tone: "error", text: "Post images must be JPG, PNG, or WebP files." });
+        return;
+      }
+      if (image.size > 5 * 1024 * 1024) {
+        setNotice({ tone: "error", text: "Post images must be 5 MB or smaller." });
+        return;
+      }
+
+      imagePath = `posts/${crypto.randomUUID()}.${extension}`;
+    }
+
     setLoading(true);
     setNotice(null);
+
+    if (imagePath && image instanceof File) {
+      const { error: uploadError } = await supabase.storage
+        .from("apec-public-post-images")
+        .upload(imagePath, image, { contentType: image.type, upsert: false });
+
+      if (uploadError) {
+        setLoading(false);
+        setNotice({ tone: "error", text: uploadError.message });
+        return;
+      }
+    }
 
     const { error } = await supabase.from("announcements").insert({
       title: String(formData.get("title") ?? "").trim(),
       body: String(formData.get("body") ?? "").trim(),
-      target_audience: String(formData.get("targetAudience") ?? "members"),
+      target_audience: targetAudience,
       is_pinned: formData.get("isPinned") === "on",
       is_urgent: formData.get("isUrgent") === "on",
       publish_at: new Date().toISOString(),
       expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
       created_by: user.id,
+      image_path: imagePath,
+      image_alt: imagePath ? cleanOptional(formData.get("imageAlt")) : null,
     });
 
     setLoading(false);
 
     if (error) {
+      if (imagePath) {
+        await supabase.storage.from("apec-public-post-images").remove([imagePath]);
+      }
       setNotice({ tone: "error", text: error.message });
       return;
     }
 
     form.reset();
     await refreshPublicData();
-    setNotice({ tone: "success", text: "Announcement published." });
+    setNotice({ tone: "success", text: targetAudience === "public" ? "Public update published." : "Announcement published." });
+  }
+
+  async function handleAnnouncementDelete(announcement: Announcement) {
+    if (!supabase || !isAdmin) return;
+    if (!window.confirm(`Remove ${announcement.title}?`)) return;
+
+    setLoading(true);
+    setNotice(null);
+    const { error: announcementError } = await supabase
+      .from("announcements")
+      .delete()
+      .eq("id", announcement.id);
+
+    if (announcementError) {
+      setLoading(false);
+      setNotice({ tone: "error", text: announcementError.message });
+      return;
+    }
+
+    if (announcement.image_path) {
+      const { error: storageError } = await supabase.storage
+        .from("apec-public-post-images")
+        .remove([announcement.image_path]);
+
+      if (storageError) {
+        setLoading(false);
+        setNotice({
+          tone: "info",
+          text: "The update was removed, but its image still needs administrator cleanup.",
+        });
+        await refreshPublicData();
+        return;
+      }
+    }
+
+    setLoading(false);
+    await refreshPublicData();
+    setNotice({ tone: "success", text: "Update removed." });
   }
 
   async function handlePolicyUpload(event: FormEvent<HTMLFormElement>) {
@@ -1170,18 +1248,18 @@ export function PortalApp() {
                 <section className="portal-card" id="announcement-publisher">
                   <div className="portal-section-head">
                     <div>
-                      <span className="portal-kicker">Member communications</span>
-                      <h2><Megaphone aria-hidden="true" /> Publish Announcement</h2>
+                      <span className="portal-kicker">Website and member communications</span>
+                      <h2><Megaphone aria-hidden="true" /> Publish Update</h2>
                     </div>
                   </div>
                   <form className="portal-form" onSubmit={handleAnnouncement}>
                     <label>
-                      Announcement title
+                      Post title
                       <input name="title" required minLength={3} maxLength={160} />
                     </label>
                     <label>
                       Audience
-                      <select name="targetAudience" defaultValue="members">
+                      <select name="targetAudience" defaultValue="public">
                         <option value="public">Public website</option>
                         <option value="members">All members</option>
                         <option value="admins">Administrators</option>
@@ -1189,8 +1267,24 @@ export function PortalApp() {
                       </select>
                     </label>
                     <label className="span-2">
-                      Message
-                      <textarea name="body" required minLength={5} rows={5} />
+                      Write-up
+                      <textarea name="body" required minLength={5} maxLength={5000} rows={7} />
+                    </label>
+                    <label>
+                      Post image (optional)
+                      <input
+                        name="announcementImage"
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                      />
+                    </label>
+                    <label>
+                      Image description
+                      <input
+                        name="imageAlt"
+                        maxLength={200}
+                        placeholder="Describe the image for accessibility"
+                      />
                     </label>
                     <label>
                       Expiry date and time
@@ -1207,10 +1301,47 @@ export function PortalApp() {
                       </label>
                     </span>
                     <button type="submit" disabled={loading}>
-                      <Megaphone aria-hidden="true" />
-                      {loading ? "Publishing..." : "Publish Announcement"}
+                      <ImagePlus aria-hidden="true" />
+                      {loading ? "Publishing..." : "Publish Update"}
                     </button>
                   </form>
+                  <div className="announcement-admin-list">
+                    {announcements.length ? announcements.map((announcement) => {
+                      const publicImageUrl = announcement.image_path
+                        ? supabase?.storage
+                            .from("apec-public-post-images")
+                            .getPublicUrl(announcement.image_path).data.publicUrl ?? null
+                        : null;
+
+                      return (
+                        <article className="announcement-admin-row" key={announcement.id}>
+                          {publicImageUrl ? (
+                            // Public Supabase image URLs are generated at runtime.
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={publicImageUrl} alt="" />
+                          ) : (
+                            <span className="announcement-admin-placeholder" aria-hidden="true">
+                              <Megaphone />
+                            </span>
+                          )}
+                          <div>
+                            <b>{announcement.title}</b>
+                            <small>{announcement.target_audience === "public" ? "Public website" : announcement.target_audience}</small>
+                          </div>
+                          <button
+                            className="icon-action-button"
+                            type="button"
+                            aria-label={`Remove ${announcement.title}`}
+                            title="Remove update"
+                            disabled={loading}
+                            onClick={() => void handleAnnouncementDelete(announcement)}
+                          >
+                            <Trash2 aria-hidden="true" />
+                          </button>
+                        </article>
+                      );
+                    }) : <p>No updates or announcements have been published.</p>}
+                  </div>
                 </section>
 
                 <section className="portal-card" id="policy-resource-manager">
