@@ -3,7 +3,7 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Eye, EyeOff, FileText, ImagePlus, Megaphone, Trash2, Upload, UserRound } from "lucide-react";
+import { ChevronDown, ChevronUp, Eye, EyeOff, FileText, ImagePlus, Megaphone, Trash2, Upload, UserRound } from "lucide-react";
 import { FunctionsHttpError, type AuthError, type User } from "@supabase/supabase-js";
 import {
   createBrowserSupabaseClient,
@@ -146,6 +146,9 @@ export function PortalApp() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [organizations, setOrganizations] = useState<MemberOrganization[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [expandedAnnouncements, setExpandedAnnouncements] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [policyResources, setPolicyResources] = useState<ResourceDocument[]>([]);
   const [missingCases, setMissingCases] = useState<MissingElderCase[]>([]);
   const [membershipApplications, setMembershipApplications] = useState<
@@ -1936,12 +1939,43 @@ export function PortalApp() {
           </div>
           <div className="portal-list">
             {announcements.length ? (
-              announcements.map((announcement) => (
-                <div key={announcement.id}>
-                  <b>{announcement.title}</b>
-                  <span>{announcement.body}</span>
-                </div>
-              ))
+              announcements.map((announcement) => {
+                const isExpanded = expandedAnnouncements.has(announcement.id);
+                const hasMoreContent = announcement.body.length > 240;
+                const bodyId = `portal-announcement-${announcement.id}`;
+
+                return (
+                  <div key={announcement.id}>
+                    <b>{announcement.title}</b>
+                    <span
+                      className={`portal-announcement-body${hasMoreContent && !isExpanded ? " is-collapsed" : ""}`}
+                      id={bodyId}
+                    >
+                      {announcement.body}
+                    </span>
+                    {hasMoreContent ? (
+                      <button
+                        aria-controls={bodyId}
+                        aria-expanded={isExpanded}
+                        className="update-read-more"
+                        type="button"
+                        onClick={() => setExpandedAnnouncements((current) => {
+                          const next = new Set(current);
+                          if (next.has(announcement.id)) {
+                            next.delete(announcement.id);
+                          } else {
+                            next.add(announcement.id);
+                          }
+                          return next;
+                        })}
+                      >
+                        {isExpanded ? "Show less" : "Read more"}
+                        {isExpanded ? <ChevronUp aria-hidden="true" /> : <ChevronDown aria-hidden="true" />}
+                      </button>
+                    ) : null}
+                  </div>
+                );
+              })
             ) : (
               <p>No announcements have been published.</p>
             )}

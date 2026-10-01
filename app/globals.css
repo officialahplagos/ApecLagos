@@ -2188,6 +2188,21 @@ select {
   line-height: 1.55;
 }
 
+.portal-announcement-body {
+  white-space: pre-line;
+}
+
+.portal-announcement-body.is-collapsed {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.portal-list .update-read-more {
+  justify-self: start;
+}
+
 .auth-application-link a,
 .application-login-link a {
   color: var(--teal-dark);

@@ -257,6 +257,8 @@ test("keeps APEC branding and uses production safeguarding workflows", async () 
   assert.match(portal, /missing_elder_cases/);
   assert.match(portal, /Likely medical conditions/);
   assert.match(portal, /medicalConditions/);
+  assert.match(portal, /portal-announcement-body/);
+  assert.match(portal, /expandedAnnouncements/);
   assert.match(portal, /medicalRisksOther/);
   assert.match(portal, /buildMedicalRisks/);
   assert.match(portal, /submit_missing_elder_report/);
