@@ -1306,6 +1306,17 @@ td small {
   color: var(--white);
 }
 
+.restricted-label {
+  color: rgba(255, 255, 255, 0.75);
+  display: block;
+  line-height: 1.55;
+  margin-top: 14px;
+}
+
+.incident-panel .inline-action {
+  color: #f8df9c;
+}
+
 .incident-panel p {
   color: rgba(255, 255, 255, 0.72);
   line-height: 1.65;

@@ -17,35 +17,6 @@ const vettingSteps = [
   "Six-month probation reviews",
 ];
 
-const modules = [
-  {
-    title: "Member Portal",
-    text: "Profiles, renewals, announcements, downloadable documents, and member status.",
-    icon: "members",
-  },
-  {
-    title: "Admin Desk",
-    text: "Approvals, member records, document uploads, renewal tracking, and audit logs.",
-    icon: "admin",
-  },
-  {
-    title: "Missing Elders",
-    text: "Moderated alerts for missing elderly persons with found and closed case tracking.",
-    icon: "missing",
-  },
-  {
-    title: "Caregiver Registers",
-    text: "Reference checks, consent records, vetting progress, and restricted safeguarding incidents.",
-    icon: "shield",
-  },
-];
-
-const trustSignals = [
-  "Officer-reviewed public alerts",
-  "Private medical details",
-  "Role-based member access",
-];
-
 function AppIcon({ name }: { name: string }) {
   const common = {
     width: 24,
@@ -158,11 +129,6 @@ export default function Home() {
               Apply for Membership
             </a>
           </div>
-          <div className="trust-row" aria-label="Platform trust signals">
-            {trustSignals.map((item) => (
-              <span key={item}>{item}</span>
-            ))}
-          </div>
         </div>
         <div className="command-panel" aria-label="APEC platform overview">
           <div className="panel-header">
@@ -174,33 +140,7 @@ export default function Home() {
             <b>Send verified details to the safeguarding team</b>
             <small>Reports remain private until an authorised officer approves publication.</small>
           </div>
-          <div className="priority-list">
-            <div>
-              <b>Public intake</b>
-              <span>Families and members of the public can submit a report.</span>
-            </div>
-            <div>
-              <b>Officer verification</b>
-              <span>Safeguarding staff review each report before publication.</span>
-            </div>
-            <div>
-              <b>Protected information</b>
-              <span>Medical, family, and reporter details remain restricted.</span>
-            </div>
-          </div>
         </div>
-      </section>
-
-      <section className="module-strip" aria-label="Main app modules">
-        {modules.map((module) => (
-          <article key={module.title}>
-            <div className="module-icon">
-              <AppIcon name={module.icon} />
-            </div>
-            <h2>{module.title}</h2>
-            <p>{module.text}</p>
-          </article>
-        ))}
       </section>
 
       <section className="workspace-band updates" id="updates">
@@ -231,11 +171,6 @@ export default function Home() {
         <div className="section-heading">
           <span>Restricted member tools</span>
           <h2>Caregiver Reference and Safeguarding Register</h2>
-          <p>
-            The positive reference register helps good caregivers prove
-            experience. Serious incident records are restricted, evidence-led,
-            and reviewed before sharing.
-          </p>
         </div>
         <div className="register-grid">
           <div className="table-panel">
@@ -244,41 +179,14 @@ export default function Home() {
               <span>Approved members</span>
             </div>
             <div className="register-access-copy">
-              <h4>Verified employment history, shared responsibly.</h4>
-              <p>
-                Member organisations can contribute employment references only
-                with the caregiver&apos;s consent. Access is restricted to approved
-                association users carrying out legitimate recruitment checks.
-              </p>
-              <ul>
-                <li>Previous role and employment period</li>
-                <li>Supervisor reference and rehire eligibility</li>
-                <li>Consent status and verification outcome</li>
-                <li>Documented correction and dispute process</li>
-              </ul>
+              <h4>Verified employment references</h4>
               <a className="inline-action" href="/portal">Member sign in</a>
             </div>
           </div>
           <div className="incident-panel">
             <h3>Safeguarding Incident Register</h3>
-            <p>
-              This replaces a casual blacklist with a controlled Do Not Rehire
-              and incident review workflow.
-            </p>
-            <article className="safeguarding-standard">
-              <span>Controlled access</span>
-              <h4>Evidence-led review before any restriction</h4>
-              <p>
-                Incident information is not a public blacklist. Authorised
-                reviewers document evidence, responses, decisions, and appeals.
-              </p>
-            </article>
-            <ul>
-              <li>Evidence upload required before review</li>
-              <li>Reporting organisation and reviewer recorded</li>
-              <li>Caregiver response and dispute outcome tracked</li>
-              <li>Access limited to approved member administrators</li>
-            </ul>
+            <span className="restricted-label">Restricted to authorised member administrators</span>
+            <a className="inline-action" href="/portal">Open secure register</a>
           </div>
         </div>
       </section>
@@ -287,11 +195,6 @@ export default function Home() {
         <div className="section-heading">
           <span>Recruitment controls</span>
           <h2>Caregiver Vetting Workflow</h2>
-          <p>
-            A shared checklist standardises recruitment checks across member
-            care homes while keeping consent and audit history attached to each
-            verification.
-          </p>
         </div>
         <div className="checklist-grid">
           {vettingSteps.map((step, index) => (
@@ -313,43 +216,6 @@ export default function Home() {
           </p>
         </div>
         <PolicyResources />
-      </section>
-
-      <section className="workspace-band membership" id="membership">
-        <div className="section-heading">
-          <span>Association operations</span>
-          <h2>Membership and Admin Portal</h2>
-          <p>
-            Secure, role-based access keeps membership services, association
-            records, and safeguarding work available to authorised users.
-          </p>
-        </div>
-        <div className="portal-grid">
-          <a href="/apply">
-            <h3>Member Dashboard</h3>
-            <p>
-              Apply online, complete compliance review, then receive secure
-              access to membership status, renewals, and announcements.
-            </p>
-            <span>Start membership application</span>
-          </a>
-          <a href="/portal">
-            <h3>Admin Dashboard</h3>
-            <p>
-              Approvals, member search, document upload, renewal tracking,
-              announcements, exports, and audit trail.
-            </p>
-            <span>Secretary, admin, super admin</span>
-          </a>
-          <a href="/portal">
-            <h3>Safeguarding Records</h3>
-            <p>
-              Controlled records for missing elder cases, caregiver references,
-              compliance checks, and incident reviews.
-            </p>
-            <span>Authorised access only</span>
-          </a>
-        </div>
       </section>
 
       <footer>
